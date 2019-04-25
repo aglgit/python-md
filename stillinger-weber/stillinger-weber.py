@@ -2,7 +2,7 @@ import os
 import quippy
 import numpy as np
 
-from ase.io import Trajectory
+from ase.io import Trajectory, read
 
 from quippy import Potential, supercell, diamond, DynamicalSystem
 
@@ -30,9 +30,10 @@ def generate_data(n_steps, timestep, filename="training.traj"):
 
     ds.atoms.calc_connect()
     pot.calc(ds.atoms, energy=True, force=True)
-    ds.print_status(epot=ds.atoms.energy)
-    traj.write(ds.atoms, calculator=pot)
 
+    ds.print_status(epot=ds.atoms.energy)
+    ds.atoms.calc_connect()
+    traj.write(ds.atoms, energy=ds.atoms.energy, force=ds.atoms.force)
     for i in range(1, n_steps+1):
         ds.advance_verlet1(timestep)
         pot.calc(ds.atoms, energy=True, force=True)
@@ -40,16 +41,19 @@ def generate_data(n_steps, timestep, filename="training.traj"):
         if i % connect_interval == 0:
             ds.print_status(epot=ds.atoms.energy)
             ds.atoms.calc_connect()
-            traj.write(ds.atoms)
+            traj.write(ds.atoms, energy=ds.atoms.energy, force=ds.atoms.force)
 
 n_steps = 100
 timestep = 1.0
-filename = "training.traj"
+filename = "training.xyz"
 generate_data(n_steps, timestep, filename)
 
 print("Training images {}".format(filename))
+images = read(filename, index=":")
+print(images)
+exit(1)
 calc = Amp(descriptor=Gaussian(),
            model=NeuralNetwork(hiddenlayers=(10, 10, 10)))
 calc.model.lossfunction = LossFunction(convergence={"energy_rmse": 0.01,
-                                                    "force_rmse": 0.01})
-calc.train(images='training.traj')
+                                                    "force_rmse": 0.1})
+calc.train(images=images)
