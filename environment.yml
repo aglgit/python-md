@@ -2,12 +2,12 @@ name: md
 channels:
   - defaults
 dependencies:
-  - python=2.7.15
+  - python=3.6.8
   - numpy
-  - matplotlib
   - scipy
+  - matplotlib
   - pip
   - pip:
     - ase
+    - asap3
     - amp-atomistics
-

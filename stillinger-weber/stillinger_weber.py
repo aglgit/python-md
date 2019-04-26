@@ -1,10 +1,10 @@
 import os
 import ase.io
-from ase.lattice.cubic import FaceCenteredCubic
+from ase.lattice.cubic import Diamond
 from ase import units
-from ase.calculators.lj import LennardJones
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
-from ase.md.verlet import VelocityVerlet
+from ase.md import VelocityVerlet
+from asap3 import OpenKIMcalculator
 
 from amp import Amp
 from amp.descriptor.gaussian import Gaussian
@@ -13,20 +13,21 @@ from amp.model import LossFunction
 
 
 def generate_data(
-    n_steps, save_interval, symbol="Ar", size=(3, 3, 3), filename="training.traj"
+    n_steps, save_interval, symbol="Si", size=(3, 3, 3), filename="training.traj"
 ):
     if os.path.exists(filename):
         return
     traj = ase.io.Trajectory(filename, "w")
-    lattice_constant = 5.260
-    atoms = FaceCenteredCubic(symbol=symbol, size=size, pbc=True)
+    atoms = Diamond(symbol=symbol, size=size, pbc=True)
     MaxwellBoltzmannDistribution(atoms, 300 * units.kB)
-    atoms.set_calculator(LennardJones(sigma=3.405, epsilon=1.0318e-2))
+
+    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
+    atoms.set_calculator(calc)
     atoms.get_potential_energy()
     atoms.get_forces()
     traj.write(atoms)
 
-    dyn = VelocityVerlet(atoms, 5 * units.fs)
+    dyn = VelocityVerlet(atoms, dt=units.fs)
     count = n_steps // save_interval
     print("Generating traj: {}".format(filename))
     print("Timestep: 0")
