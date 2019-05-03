@@ -1,28 +1,27 @@
 import os
 import ase.io
-from ase.lattice.cubic import Diamond
+from ase.lattice.cubic import FaceCenteredCubic
 from ase import units
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md import VelocityVerlet
-from asap3 import OpenKIMcalculator
+from asap3 import EMT
 
 from amp import Amp
-from amp.descriptor.gaussian import Gaussian
+from amp.descriptor.radial import Radial
 from amp.model.neuralnetwork import NeuralNetwork
 from amp.model import LossFunction
 
 
 def generate_data(
-    n_steps, save_interval, symbol="Si", size=(3, 3, 3), filename="training.traj"
+    n_steps, save_interval, symbol="Cu", size=(3, 3, 3), filename="training.traj"
 ):
     if os.path.exists(filename):
         return
     traj = ase.io.Trajectory(filename, "w")
-    atoms = Diamond(symbol=symbol, size=size, pbc=True)
+    atoms = FaceCenteredCubic(symbol=symbol, size=size, pbc=True)
     MaxwellBoltzmannDistribution(atoms, 300 * units.kB)
 
-    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
-    atoms.set_calculator(calc)
+    atoms.set_calculator(EMT())
     atoms.get_potential_energy()
     atoms.get_forces()
     traj.write(atoms)
@@ -44,8 +43,14 @@ generate_data(1000, 10, filename=filename)
 
 print("Training from traj: {}".format(filename))
 traj = ase.io.read(filename, ":")
-calc = Amp(descriptor=Gaussian(), model=NeuralNetwork(hiddenlayers=(10, 10, 10)))
+calc = Amp(descriptor=Radial(), model=NeuralNetwork(hiddenlayers=(10, 10, 10)))
 calc.model.lossfunction = LossFunction(
-    convergence={"energy_rmse": 0.02, "force_rmse": 0.2}
+    convergence={"energy_rmse": 1E-4}
 )
 calc.train(images=traj)
+
+f = calc.descriptor.fingerprints
+f_k = f.d.keys()
+
+n = calc.descriptor.neighborlist
+n_k = n.d.keys()

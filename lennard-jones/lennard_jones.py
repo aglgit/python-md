@@ -18,7 +18,6 @@ def generate_data(
     if os.path.exists(filename):
         return
     traj = ase.io.Trajectory(filename, "w")
-    lattice_constant = 5.260
     atoms = FaceCenteredCubic(symbol=symbol, size=size, pbc=True)
     MaxwellBoltzmannDistribution(atoms, 300 * units.kB)
     atoms.set_calculator(LennardJones(sigma=3.405, epsilon=1.0318e-2))
