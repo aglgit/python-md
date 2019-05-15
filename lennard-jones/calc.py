@@ -2,25 +2,21 @@ import os
 import ase.io
 from ase.lattice.cubic import FaceCenteredCubic
 from ase import units
-from ase.calculators.lj import LennardJones
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.verlet import VelocityVerlet
-
 from amp import Amp
-from amp.descriptor.gaussian import Gaussian
-from amp.model.neuralnetwork import NeuralNetwork
-from amp.model import LossFunction
 
 
-def generate_data(
-    n_steps, save_interval, symbol="Ar", size=(4, 4, 4), filename="training.traj"
+def test_calc(
+    n_steps, save_interval, symbol="Ar", size=(4, 4, 4), filename="test.traj"
 ):
     if os.path.exists(filename):
         return
     traj = ase.io.Trajectory(filename, "w")
     atoms = FaceCenteredCubic(symbol=symbol, size=size, pbc=True)
     MaxwellBoltzmannDistribution(atoms, 300 * units.kB)
-    atoms.set_calculator(LennardJones(sigma=3.405, epsilon=1.0318e-2))
+    calc = Amp.load("amp.amp")
+    atoms.set_calculator(calc)
     atoms.get_potential_energy()
     atoms.get_kinetic_energy()
     atoms.get_forces()
@@ -39,13 +35,5 @@ def generate_data(
         print("Timestep: {}".format((i + 1) * save_interval))
 
 
-filename = "training.traj"
-generate_data(1000, 10, filename=filename)
-
-print("Training from traj: {}".format(filename))
-traj = ase.io.read(filename, ":")
-calc = Amp(descriptor=Gaussian(), model=NeuralNetwork(hiddenlayers=(10, 10, 10)))
-calc.model.lossfunction = LossFunction(
-    convergence={"energy_rmse": 1E-3, "force_rmse": 3E-2}
-)
-calc.train(images=traj)
+filename = "test.traj"
+test_data(10000, 10, filename=filename)

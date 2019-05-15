@@ -6,6 +6,7 @@ dependencies:
   - numpy
   - scipy
   - matplotlib
+  - jupyter
   - pip
   - pip:
     - ase

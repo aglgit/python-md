@@ -4,7 +4,7 @@ from ase.lattice.cubic import Diamond
 from ase import units
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md import VelocityVerlet
-from gpaw import GPAW
+from ase.calculators.cp2k import CP2K
 
 from amp import Amp
 from amp.descriptor.gaussian import Gaussian
@@ -21,9 +21,10 @@ def generate_data(
     atoms = Diamond(symbol=symbol, size=size, pbc=True)
     MaxwellBoltzmannDistribution(atoms, 300 * units.kB)
 
-    calc = GPAW(symmetry={'point_group': False})
+    calc = CP2K()
     atoms.set_calculator(calc)
     atoms.get_potential_energy()
+    atoms.get_kinetic_energy()
     atoms.get_forces()
     traj.write(atoms)
 
@@ -34,6 +35,7 @@ def generate_data(
     for i in range(count):
         dyn.run(save_interval)
         atoms.get_potential_energy()
+        atoms.get_kinetic_energy()
         atoms.get_forces()
         traj.write(atoms)
         print("Timestep: {}".format((i + 1) * save_interval))
@@ -46,6 +48,6 @@ print("Training from traj: {}".format(filename))
 traj = ase.io.read(filename, ":")
 calc = Amp(descriptor=Gaussian(), model=NeuralNetwork(hiddenlayers=(10, 10, 10)))
 calc.model.lossfunction = LossFunction(
-    convergence={"energy_rmse": 0.02, "force_rmse": 0.02}
+    convergence={"energy_rmse": 1E-3, "force_rmse": 1E-2}
 )
 calc.train(images=traj)
