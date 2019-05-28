@@ -114,3 +114,6 @@ venv.bak/
 
 # CP2K
 cp2k*.*
+
+# Vim
+*.swp

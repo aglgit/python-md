@@ -45,7 +45,7 @@ print("Training from traj: {}".format(filename))
 traj = ase.io.read(filename, ":")
 calc = Amp(
     descriptor=DPMD(cutoff=3.0, nmax=20, angular=True),
-    model=NeuralNetwork(hiddenlayers=(240, 120, 60, 30), initialTrainingRate=1e-6)
+    model=NeuralNetwork(hiddenlayers=(240, 120, 60, 30)),
 )
 calc.model.lossfunction = LossFunction(
     convergence={"energy_rmse": 1e-4, "force_rmse": None}

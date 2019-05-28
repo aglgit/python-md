@@ -2,16 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import ase.io
-from ase.calculators.lj import LennardJones
 from amp import Amp
 from amp.analysis import read_trainlog
+from ase.calculators.cp2k import CP2K
 from asap3.analysis.rdf import RadialDistributionFunction
 from generate_traj import GenerateTrajectory
-
-from amp import Amp
-from amp.descriptor.gaussian import Gaussian
-from amp.model.neuralnetwork import NeuralNetwork
-from amp.model import LossFunction
 
 
 class Analyzer:
@@ -52,28 +47,6 @@ class Analyzer:
 
 
 if __name__ == "__main__":
-    train_filename = "training.traj"
-    n_steps = 10000
-    save_interval = 50
-    size = (3, 3, 3)
-    temp = 300
-    calc = LennardJones(sigma=3.405, epsilon=1.0318e-2)
-
-    lj_train = GenerateTrajectory(calc)
-    lj_train.lennard_jones_system(size, temp)
-    lj_train.create_traj(train_filename, n_steps, save_interval)
-
-    print("Training from traj: {}".format(train_filename))
-    traj = ase.io.read(train_filename, ":")
-    descriptor = Gaussian(cutoff=6.0, fortran=True)
-    convergence = {"energy_rmse": 1e-3, "force_rmse": 5e-2}
-    loss_function = LossFunction(convergence=convergence)
-    hidden_layers = (10, 10, 10)
-    model = NeuralNetwork(activation="tanh", lossfunction=loss_function, hiddenlayers=hidden_layers)
-
-    calc = Amp(descriptor=descriptor, model=model)
-    calc.train(images=traj)
-
     sns.set()
 
     log_file = "amp-log.txt"
@@ -82,23 +55,28 @@ if __name__ == "__main__":
     anl = Analyzer(log_file)
     anl.plot_rmse(save_file)
 
-    lj_calc = LennardJones(sigma=3.405, epsilon=1.0318e-2)
-    lj_test_filename = "lj_test.traj"
+    cp2k_calc = CP2k()
+    cp2k_test_filename = "cp2k_test.traj"
     amp_calc = Amp.load("amp.amp")
     amp_test_filename = "amp_test.traj"
 
-    lj_test = GenerateTrajectory(lj_calc)
-    lj_test.lennard_jones_system(size, temp)
-    lj_test.create_traj(lj_test_filename, n_steps, save_interval)
+    n_steps = 10000
+    save_interval = 50
+    size = (3, 3, 3)
+    temp = 300
+
+    cp2k_test = GenerateTrajectory(cp2k_calc)
+    cp2k_test.stillinger_weber_system(size, temp)
+    cp2k_test.create_traj(cp2k_test_filename, n_steps, save_interval)
 
     amp_test = GenerateTrajectory(amp_calc)
-    amp_test.lennard_jones_system(size, temp)
+    amp_test.stillinger_weber_system(size, temp)
     amp_test.create_traj(amp_test_filename, n_steps, save_interval)
 
-    rmax = 12.0
-    nbins = 150
+    rmax = 8.0
+    nbins = 200
     x = (np.arange(nbins) + 0.5) * rmax / nbins
-    lj_rdf = anl.generate_rdf(lj_test_filename, rmax, nbins)
+    lj_rdf = anl.generate_rdf(cp2k_test_filename, rmax, nbins)
     amp_rdf = anl.generate_rdf(amp_test_filename, rmax, nbins)
 
     plt.plot(x, lj_rdf, label="1")

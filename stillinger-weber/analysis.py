@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import ase.io
-from ase.calculators.lj import LennardJones
 from amp import Amp
 from amp.analysis import read_trainlog
+from asap3 import OpenKIMcalculator
 from asap3.analysis.rdf import RadialDistributionFunction
 from generate_traj import GenerateTrajectory
 
@@ -57,11 +57,11 @@ if __name__ == "__main__":
     save_interval = 50
     size = (3, 3, 3)
     temp = 300
-    calc = LennardJones(sigma=3.405, epsilon=1.0318e-2)
+    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
 
-    lj_train = GenerateTrajectory(calc)
-    lj_train.lennard_jones_system(size, temp)
-    lj_train.create_traj(train_filename, n_steps, save_interval)
+    sw_train = GenerateTrajectory(calc)
+    sw_train.stillinger_weber_system(size, temp)
+    sw_train.create_traj(train_filename, n_steps, save_interval)
 
     print("Training from traj: {}".format(train_filename))
     traj = ase.io.read(train_filename, ":")
@@ -82,23 +82,23 @@ if __name__ == "__main__":
     anl = Analyzer(log_file)
     anl.plot_rmse(save_file)
 
-    lj_calc = LennardJones(sigma=3.405, epsilon=1.0318e-2)
-    lj_test_filename = "lj_test.traj"
+    sw_calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
+    sw_test_filename = "sw_test.traj"
     amp_calc = Amp.load("amp.amp")
     amp_test_filename = "amp_test.traj"
 
-    lj_test = GenerateTrajectory(lj_calc)
-    lj_test.lennard_jones_system(size, temp)
-    lj_test.create_traj(lj_test_filename, n_steps, save_interval)
+    sw_test = GenerateTrajectory(sw_calc)
+    sw_test.stillinger_weber_system(size, temp)
+    sw_test.create_traj(sw_test_filename, n_steps, save_interval)
 
     amp_test = GenerateTrajectory(amp_calc)
-    amp_test.lennard_jones_system(size, temp)
+    amp_test.stillinger_weber_system(size, temp)
     amp_test.create_traj(amp_test_filename, n_steps, save_interval)
 
-    rmax = 12.0
-    nbins = 150
+    rmax = 8.0
+    nbins = 200
     x = (np.arange(nbins) + 0.5) * rmax / nbins
-    lj_rdf = anl.generate_rdf(lj_test_filename, rmax, nbins)
+    lj_rdf = anl.generate_rdf(sw_test_filename, rmax, nbins)
     amp_rdf = anl.generate_rdf(amp_test_filename, rmax, nbins)
 
     plt.plot(x, lj_rdf, label="1")
