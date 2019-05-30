@@ -1,26 +1,72 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import ase.io
-from ase.calculators.lj import LennardJones
-from amp import Amp
-from amp.analysis import read_trainlog
 from asap3.analysis.rdf import RadialDistributionFunction
 from generate_traj import GenerateTrajectory
 
 from amp import Amp
+from amp.analysis import read_trainlog
 from amp.descriptor.gaussian import Gaussian
 from amp.model.neuralnetwork import NeuralNetwork
 from amp.model import LossFunction
 
 
 class Analyzer:
-    def __init__(self, log_file):
-        self.log = read_trainlog(log_file)
-        self.no_images = self.log["no_images"]
-        self.convergence = self.log["convergence"]
+    def train_amp(self, calc, system, train_filename):
+        xyz_filename = "".join((train_filename.split(".")[0], ".xyz"))
+        n_steps = 10000
+        save_interval = 50
+        size = (3, 3, 3)
+        temp = 300
 
-    def plot_rmse(self, save_file):
+        generator = GenerateTrajectory()
+        generator.generate_system(calc, system, size, temp)
+        generator.create_traj(train_filename, n_steps, save_interval)
+        generator.convert_traj(train_filename, xyz_filename)
+
+        print("Training from traj: {}".format(train_filename))
+
+        traj = ase.io.read(train_filename, ":")
+        convergence = {"energy_rmse": 1e-3, "force_rmse": 5e-2}
+        energy_coefficient = 1.0
+        force_coefficient = 0.1
+        hidden_layers = (10, 10, 10)
+        activation = "sigmoid"
+
+        descriptor = Gaussian(fortran=True)
+        loss_function = LossFunction(
+            convergence=convergence,
+            energy_coefficient=energy_coefficient,
+            force_coefficient=force_coefficient,
+        )
+        model = NeuralNetwork(
+            hiddenlayers=hidden_layers,
+            activation=activation,
+            lossfunction=loss_function,
+        )
+
+        calc = Amp(descriptor=descriptor, model=model)
+        calc.train(images=traj)
+
+    def test_amp(self, calc, system, test_filename, amp_test_filename):
+        amp_calc = Amp.load("amp.amp")
+        n_steps = 10000
+        save_interval = 50
+        size = (3, 3, 3)
+        temp = 300
+
+        generator = GenerateTrajectory()
+        generator.generate_system(calc, system, size, temp)
+        generator.create_traj(train_filename, n_steps, save_interval)
+
+        amp_generator = GenerateTrajectory()
+        amp_generator.generate_system(amp_calc, system, size, temp)
+        amp_generator.create_traj(amp_test_filename, n_steps, save_interval)
+
+    def plot_rmse(self, log_file, plot_file):
+        log = read_trainlog(log_file)
+        convergence = self.log["convergence"]
+
         steps = self.convergence["steps"]
         energy_rmse = self.convergence["emrs"]
         force_rmse = self.convergence["fmrs"]
@@ -34,10 +80,10 @@ class Analyzer:
         plt.legend()
         plt.xlabel("Steps")
         plt.ylabel("Error [eV, eV/Å]")
-        plt.savefig(save_file)
+        plt.savefig(plot_file)
         plt.clf()
 
-    def generate_rdf(self, traj_file, rmax, nbins):
+    def calculate_rdf(self, traj_file, rmax, nbins):
         traj = ase.io.read(traj_file, ":")
         rdf_obj = None
         for atoms in traj:
@@ -50,58 +96,14 @@ class Analyzer:
 
         return rdf
 
+    def calculate_msd(self, traj_file):
+        traj = ase.io.read(traj_file, ":")
+        init_pos = traj[0].get_positions()
+        cell = traj[0].get_cell()
+        msd = np.zeros(len(traj))
+        for atoms in traj:
+            pos = atoms.get_positions()
+            disp = pos - init_pos
+            msd += np.linalg.norm(disp, axis=1).sum()
 
-if __name__ == "__main__":
-    train_filename = "training.traj"
-    n_steps = 10000
-    save_interval = 50
-    size = (3, 3, 3)
-    temp = 300
-    calc = LennardJones(sigma=3.405, epsilon=1.0318e-2)
-
-    lj_train = GenerateTrajectory(calc)
-    lj_train.lennard_jones_system(size, temp)
-    lj_train.create_traj(train_filename, n_steps, save_interval)
-
-    print("Training from traj: {}".format(train_filename))
-    traj = ase.io.read(train_filename, ":")
-    descriptor = Gaussian(cutoff=6.0, fortran=True)
-    convergence = {"energy_rmse": 1e-3, "force_rmse": 5e-2}
-    loss_function = LossFunction(convergence=convergence)
-    hidden_layers = (10, 10, 10)
-    model = NeuralNetwork(activation="tanh", lossfunction=loss_function, hiddenlayers=hidden_layers)
-
-    calc = Amp(descriptor=descriptor, model=model)
-    calc.train(images=traj)
-
-    sns.set()
-
-    log_file = "amp-log.txt"
-    save_file = "convergence.png"
-
-    anl = Analyzer(log_file)
-    anl.plot_rmse(save_file)
-
-    lj_calc = LennardJones(sigma=3.405, epsilon=1.0318e-2)
-    lj_test_filename = "lj_test.traj"
-    amp_calc = Amp.load("amp.amp")
-    amp_test_filename = "amp_test.traj"
-
-    lj_test = GenerateTrajectory(lj_calc)
-    lj_test.lennard_jones_system(size, temp)
-    lj_test.create_traj(lj_test_filename, n_steps, save_interval)
-
-    amp_test = GenerateTrajectory(amp_calc)
-    amp_test.lennard_jones_system(size, temp)
-    amp_test.create_traj(amp_test_filename, n_steps, save_interval)
-
-    rmax = 12.0
-    nbins = 150
-    x = (np.arange(nbins) + 0.5) * rmax / nbins
-    lj_rdf = anl.generate_rdf(lj_test_filename, rmax, nbins)
-    amp_rdf = anl.generate_rdf(amp_test_filename, rmax, nbins)
-
-    plt.plot(x, lj_rdf, label="1")
-    plt.plot(x, amp_rdf, label="2")
-    plt.legend()
-    plt.show()
+        return msd

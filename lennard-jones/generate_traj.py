@@ -1,20 +1,37 @@
 import os
 import ase.io
-from ase.lattice.cubic import FaceCenteredCubic
+from ase.lattice.cubic import FaceCenteredCubic, Diamond
 from ase import units
-from ase.calculators.lj import LennardJones
-from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+from ase.md.velocitydistribution import (
+    MaxwellBoltzmannDistribution,
+    Stationary,
+    ZeroRotation,
+)
 from ase.md.verlet import VelocityVerlet
 
 
 class GenerateTrajectory:
-    def __init__(self, calc):
-        self.calc = calc
+    def __init__(self):
+        self.systems = {
+            "lennard_jones": self.lennard_jones_system,
+            "stillinger_weber": self.stillinger_weber_system,
+        }
+
+    def generate_system(self, calc, system, size, temp):
+        if system in self.systems:
+            self.systems[system](size, temp)
+            MaxwellBoltzmannDistribution(self.atoms, temp * units.kB)
+            Stationary(self.atoms)
+            ZeroRotation(self.atoms)
+            self.atoms.set_calculator(calc)
+        else:
+            print("System {} not found!".format(system))
 
     def lennard_jones_system(self, size, temp):
         self.atoms = FaceCenteredCubic(size=size, symbol="Ar", pbc=True)
-        MaxwellBoltzmannDistribution(self.atoms, temp * units.kB)
-        self.atoms.set_calculator(self.calc)
+
+    def stillinger_weber_system(self, size, temp):
+        self.atoms = Diamond(size=size, symbol="Si", pbc=True)
 
     def create_traj(self, filename, n_steps, save_interval, timestep=5.0):
         if os.path.exists(filename):
@@ -40,3 +57,13 @@ class GenerateTrajectory:
             print("Timestep: {}".format((i + 1) * save_interval))
 
         print("Finished generating traj {}".format(filename))
+
+    def convert_traj(self, infile, outfile):
+        print("Converting {} to {}".format(infile, outfile))
+        if not os.path.exists(infile):
+            print("No such file {}!".format(infile))
+        elif os.path.exists(outfile):
+            print("File {} already exists!".format(outfile))
+        else:
+            traj = ase.io.read(infile, ":")
+            ase.io.write(outfile, traj)

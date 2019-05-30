@@ -2,7 +2,11 @@ import os
 import ase.io
 from ase.lattice.cubic import Diamond
 from ase import units
-from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+from ase.md.velocitydistribution import (
+    MaxwellBoltzmannDistribution,
+    Stationary,
+    ZeroRotation,
+)
 from ase.md.verlet import VelocityVerlet
 from asap3 import OpenKIMcalculator
 
@@ -14,6 +18,8 @@ class GenerateTrajectory:
     def stillinger_weber_system(self, size, temp):
         self.atoms = Diamond(size=size, symbol="Si", pbc=True)
         MaxwellBoltzmannDistribution(self.atoms, temp * units.kB)
+        Stationary(self.atoms)
+        ZeroRotation(self.atoms)
         self.atoms.set_calculator(self.calc)
 
     def create_traj(self, filename, n_steps, save_interval, timestep=5.0):

@@ -67,9 +67,11 @@ if __name__ == "__main__":
     traj = ase.io.read(train_filename, ":")
     descriptor = Gaussian(cutoff=6.0, fortran=True)
     convergence = {"energy_rmse": 1e-3, "force_rmse": 5e-2}
-    loss_function = LossFunction(convergence=convergence)
+    loss_function = LossFunction(convergence=convergence, force_coefficient=0.1)
     hidden_layers = (10, 10, 10)
-    model = NeuralNetwork(activation="tanh", lossfunction=loss_function, hiddenlayers=hidden_layers)
+    model = NeuralNetwork(
+        activation="tanh", lossfunction=loss_function, hiddenlayers=hidden_layers
+    )
 
     calc = Amp(descriptor=descriptor, model=model)
     calc.train(images=traj)
