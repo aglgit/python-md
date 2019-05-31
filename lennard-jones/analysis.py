@@ -27,7 +27,7 @@ class Analyzer:
         print("Training from traj: {}".format(train_filename))
 
         traj = ase.io.read(train_filename, ":")
-        convergence = {"energy_rmse": 1e-3, "force_rmse": 5e-2}
+        convergence = {"energy_rmse": 1e-5, "force_rmse": 5e-3}
         energy_coefficient = 1.0
         force_coefficient = 0.04
         hidden_layers = (10, 10, 10)
@@ -107,3 +107,30 @@ class Analyzer:
             msd += np.linalg.norm(disp, axis=1).sum()
 
         return msd
+
+    def calculate_energy_diff(self, test_traj_file, amp_traj_file):
+        test_traj = ase.io.read(test_traj_file, ":")
+        amp_traj = ase.io.read(amp_traj_file, ":")
+
+        num_images = len(test_traj)
+        energy_exact = np.zeros(num_images)
+        energy_amp = np.zeros(num_images)
+        for i in range(num_images):
+            energy_exact[i] = test_traj[i].get_potential_energy()
+            energy_amp[i] = amp_traj[i].get_potential_energy()
+
+        return energy_exact, energy_amp
+
+    def calculate_force_diff(self, test_traj_file, amp_traj_file):
+        test_traj = ase.io.read(test_traj_file, ":")
+        amp_traj = ase.io.read(amp_traj_file, ":")
+
+        num_images = len(test_traj)
+        num_forces = len(test_traj[0].get_forces())
+        force_exact = np.zeros((num_images, num_forces))
+        force_amp = np.zeros((num_images, num_forces))
+        for i in range(num_images):
+            force_exact[i] = test_traj[i].get_forces()
+            force_amp[i] = amp_traj[i].get_forces()
+
+        return force_exact, force_amp
