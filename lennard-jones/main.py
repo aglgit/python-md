@@ -2,6 +2,7 @@ import seaborn as sns
 from ase.calculators.lj import LennardJones
 from analysis import Analyzer
 
+
 if __name__ == "__main__":
     sns.set()
 

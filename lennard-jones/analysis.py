@@ -29,9 +29,9 @@ class Analyzer:
         traj = ase.io.read(train_filename, ":")
         convergence = {"energy_rmse": 1e-3, "force_rmse": 5e-2}
         energy_coefficient = 1.0
-        force_coefficient = 0.1
+        force_coefficient = 0.04
         hidden_layers = (10, 10, 10)
-        activation = "sigmoid"
+        activation = "tanh"
 
         descriptor = Gaussian(fortran=True)
         loss_function = LossFunction(
@@ -65,12 +65,12 @@ class Analyzer:
 
     def plot_rmse(self, log_file, plot_file):
         log = read_trainlog(log_file)
-        convergence = self.log["convergence"]
+        convergence = log["convergence"]
 
-        steps = self.convergence["steps"]
-        energy_rmse = self.convergence["emrs"]
-        force_rmse = self.convergence["fmrs"]
-        loss = self.convergence["costfxns"]
+        steps = convergence["steps"]
+        energy_rmse = convergence["es"]
+        force_rmse = convergence["fs"]
+        loss = convergence["costfxns"]
 
         plt.semilogy(steps, energy_rmse, label="Energy RMSE")
         plt.semilogy(steps, force_rmse, label="Force RMSE")
