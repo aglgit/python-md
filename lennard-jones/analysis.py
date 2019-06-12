@@ -17,7 +17,7 @@ class Analyzer:
         n_steps = 10000
         save_interval = 50
         size = (3, 3, 3)
-        temp = 300
+        temp = 600
 
         generator = GenerateTrajectory()
         generator.generate_system(calc, system, size, temp)
