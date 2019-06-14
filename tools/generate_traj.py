@@ -40,10 +40,12 @@ class GenerateTrajectory:
         traj = ase.io.Trajectory(filename, "w")
 
         print("Generating traj {}".format(filename))
+
         self.atoms.get_potential_energy()
         self.atoms.get_kinetic_energy()
         self.atoms.get_forces()
         traj.write(self.atoms)
+
         print("Timestep: 0")
 
         dyn = VelocityVerlet(self.atoms, timestep=timestep * units.fs)
@@ -60,6 +62,7 @@ class GenerateTrajectory:
 
     def convert_traj(self, infile, outfile):
         print("Converting {} to {}".format(infile, outfile))
+
         if not os.path.exists(infile):
             print("No such file {}!".format(infile))
         elif os.path.exists(outfile):

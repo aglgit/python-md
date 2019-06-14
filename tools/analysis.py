@@ -1,38 +1,38 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import ase.io
+import numpy as np
 from asap3.analysis.rdf import RadialDistributionFunction
 from generate_traj import GenerateTrajectory
 
 from amp import Amp
-from amp.analysis import read_trainlog
 from amp.descriptor.gaussian import Gaussian
 from amp.model.neuralnetwork import NeuralNetwork
 from amp.model import LossFunction
 
 
 class Analyzer:
+    def __init__(self):
+        self.n_train = int(3e4)
+        self.n_test = int(1e3)
+        self.save_interval = 25
+        self.size = (3, 3, 3)
+        self.temp = 750
+
     def train_amp(self, calc, system, train_filename):
         xyz_filename = "".join((train_filename.split(".")[0], ".xyz"))
-        n_steps = 10000
-        save_interval = 50
-        size = (3, 3, 3)
-        temp = 600
-
-        generator = GenerateTrajectory()
-        generator.generate_system(calc, system, size, temp)
-        generator.create_traj(train_filename, n_steps, save_interval)
-        generator.convert_traj(train_filename, xyz_filename)
-
-        print("Training from traj: {}".format(train_filename))
-
-        traj = ase.io.read(train_filename, ":")
-        convergence = {"energy_rmse": 1e-5, "force_rmse": 5e-3}
+        convergence = {"energy_rmse": 1e-3, "force_rmse": 7.5e-2}
         energy_coefficient = 1.0
         force_coefficient = 0.04
         hidden_layers = (10, 10, 10)
         activation = "tanh"
 
+        generator = GenerateTrajectory()
+        generator.generate_system(calc, system, self.size, self.temp)
+        generator.create_traj(train_filename, self.n_train, self.save_interval)
+        generator.convert_traj(train_filename, xyz_filename)
+
+        print("Training from traj: {}".format(train_filename))
+
+        traj = ase.io.read(train_filename, ":")
         descriptor = Gaussian(fortran=True)
         loss_function = LossFunction(
             convergence=convergence,
@@ -50,40 +50,24 @@ class Analyzer:
 
     def test_amp(self, calc, system, test_filename, amp_test_filename):
         amp_calc = Amp.load("amp.amp")
-        n_steps = 10000
-        save_interval = 50
-        size = (3, 3, 3)
-        temp = 300
 
+        xyz_test_filename = "".join((test_filename.split(".")[0], ".xyz"))
         generator = GenerateTrajectory()
-        generator.generate_system(calc, system, size, temp)
-        generator.create_traj(train_filename, n_steps, save_interval)
+        generator.generate_system(calc, system, self.size, self.temp)
+        generator.create_traj(test_filename, self.n_test, self.save_interval)
+        generator.convert_traj(test_filename, xyz_test_filename)
 
+        xyz_amp_test_filename = "".join((amp_test_filename.split(".")[0], ".xyz"))
         amp_generator = GenerateTrajectory()
-        amp_generator.generate_system(amp_calc, system, size, temp)
-        amp_generator.create_traj(amp_test_filename, n_steps, save_interval)
+        amp_generator.generate_system(amp_calc, system, self.size, self.temp)
+        amp_generator.create_traj(amp_test_filename, self.n_test, self.save_interval)
+        amp_generator.convert_traj(amp_test_filename, xyz_amp_test_filename)
 
-    def plot_rmse(self, log_file, plot_file):
-        log = read_trainlog(log_file)
-        convergence = log["convergence"]
+    def calculate_rdf(self, traj_file):
+        rmax = 10.0
+        nbins = 100
+        x = (np.arange(nbins) + 0.5) * rmax / nbins
 
-        steps = convergence["steps"]
-        energy_rmse = convergence["es"]
-        force_rmse = convergence["fs"]
-        loss = convergence["costfxns"]
-
-        plt.semilogy(steps, energy_rmse, label="Energy RMSE")
-        plt.semilogy(steps, force_rmse, label="Force RMSE")
-        plt.semilogy(steps, loss, label="Loss function")
-
-        plt.title("Energy and force Root Mean Square Error")
-        plt.legend()
-        plt.xlabel("Steps")
-        plt.ylabel("Error [eV, eV/Å]")
-        plt.savefig(plot_file)
-        plt.clf()
-
-    def calculate_rdf(self, traj_file, rmax, nbins):
         traj = ase.io.read(traj_file, ":")
         rdf_obj = None
         for atoms in traj:
@@ -94,12 +78,11 @@ class Analyzer:
             rdf_obj.update()
         rdf = rdf_obj.get_rdf()
 
-        return rdf
+        return x, rdf
 
     def calculate_msd(self, traj_file):
         traj = ase.io.read(traj_file, ":")
         init_pos = traj[0].get_positions()
-        cell = traj[0].get_cell()
         msd = np.zeros(len(traj))
         for atoms in traj:
             pos = atoms.get_positions()
