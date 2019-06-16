@@ -11,7 +11,7 @@ from amp.model import LossFunction
 
 class Analyzer:
     def __init__(self):
-        self.n_train = int(3e4)
+        self.n_train = int(1e4)
         self.n_test = int(1e3)
         self.save_interval = 25
         self.size = (3, 3, 3)

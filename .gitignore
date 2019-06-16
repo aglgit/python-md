@@ -115,8 +115,8 @@ venv.bak/
 # CP2K
 cp2k*.*
 
+# XYZ files
+*.xyz
+
 # Vim
 *.swp
-
-# XYZ file
-*.xyz

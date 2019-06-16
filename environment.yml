@@ -11,4 +11,4 @@ dependencies:
   - pip:
     - ase
     - asap3
-    - gpaw
+    - amp
