@@ -70,10 +70,10 @@ def plot_network_and_derivative(x_test, y_test, model):
     plt.clf()
 
     plt.plot(x_plot, abs(y_model - y_plot))
-    plt.title("Relative error of neural network")
+    plt.title("Absolute error of neural network")
     plt.xlabel("Radial distance r")
-    plt.ylabel("Relative error")
-    plt.savefig("potential_relative_error.png")
+    plt.ylabel("Absolute error")
+    plt.savefig("potential_absolute_error.png")
     plt.clf()
 
     plt.plot(x_plot, dy_plot)
@@ -86,11 +86,16 @@ def plot_network_and_derivative(x_test, y_test, model):
     plt.clf()
 
     plt.plot(x_plot, abs(dy_model - dy_plot))
-    plt.title("Relative error of neural network force")
+    plt.title("Absolute error of neural network force")
     plt.xlabel("Radial distance r")
-    plt.ylabel("Relative error")
-    plt.savefig("force_relative_error.png")
+    plt.ylabel("Absolute error")
+    plt.savefig("force_absolute_error.png")
     plt.clf()
+
+    energy_rmse = np.sqrt(np.sum((y_model - y_plot) ** 2))
+    force_rmse = np.sqrt(np.sum((dy_model - dy_plot) ** 2))
+
+    print("Energy RMSE: {}, Force RMSE: {}".format(energy_rmse, force_rmse))
 
 
 (x_train, y_train), (x_test, y_test) = lennard_jones_data()
@@ -127,7 +132,7 @@ def test_step(images, labels):
     test_loss(t_loss)
 
 
-epochs = 50
+epochs = 100
 
 for epoch in range(epochs):
     for images, labels in train_ds:

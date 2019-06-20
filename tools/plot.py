@@ -17,7 +17,7 @@ class Plotter:
         loss = convergence["costfxns"]
 
         plt.semilogy(steps, energy_rmse, label="Energy RMSE")
-        if len(force_rmse) > 0:
+        if force_rmse:
             plt.semilogy(steps, force_rmse, label="Force RMSE")
             plt.ylabel("Error [eV, eV/Å]")
         else:
@@ -53,12 +53,12 @@ class Plotter:
         plt.savefig(plot_file)
         plt.clf()
 
-    def plot_energy_diff(self, plot_file, steps, energy_exact, energy_amp):
+    def plot_energy_diff(self, plot_file, legend, steps, energy_exact, energy_amp):
         plt.plot(steps, energy_exact)
         plt.plot(steps, energy_amp)
 
         plt.title("Potential energy as a function of time")
-        plt.legend(["Exact", "AMP"])
+        plt.legend(legend)
         plt.xlabel("Steps")
         plt.ylabel("Potential energy [eV]")
         plt.savefig(plot_file)
