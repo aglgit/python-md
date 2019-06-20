@@ -17,7 +17,11 @@ class Plotter:
         loss = convergence["costfxns"]
 
         plt.semilogy(steps, energy_rmse, label="Energy RMSE")
-        plt.semilogy(steps, force_rmse, label="Force RMSE")
+        if len(force_rmse) > 0:
+            plt.semilogy(steps, force_rmse, label="Force RMSE")
+            plt.ylabel("Error [eV, eV/Å]")
+        else:
+            plt.ylabel("Error [eV]")
         plt.semilogy(steps, loss, label="Loss function")
 
         plt.title("Energy and force Root Mean Square Error")
@@ -35,5 +39,27 @@ class Plotter:
         plt.legend(legend)
         plt.xlabel("Radial distance [Å]")
         plt.ylabel("RDF")
+        plt.savefig(plot_file)
+        plt.clf()
+
+    def plot_msd(self, plot_file, legend, steps, *msds):
+        for msd in msds:
+            plt.plot(steps, msd)
+
+        plt.title("Mean Squared Displacement")
+        plt.legend(legend)
+        plt.xlabel("Steps")
+        plt.ylabel("MSD [Å]")
+        plt.savefig(plot_file)
+        plt.clf()
+
+    def plot_energy_diff(self, plot_file, steps, energy_exact, energy_amp):
+        plt.plot(steps, energy_exact)
+        plt.plot(steps, energy_amp)
+
+        plt.title("Potential energy as a function of time")
+        plt.legend(["Exact", "AMP"])
+        plt.xlabel("Steps")
+        plt.ylabel("Potential energy [eV]")
         plt.savefig(plot_file)
         plt.clf()

@@ -39,6 +39,60 @@ def lennard_jones_data():
     return (x_train, y_train), (x_test, y_test)
 
 
+def plot_network_and_derivative(x_test, y_test, model):
+    lj_derivative = lambda r: -24 * (2 * r ** (-13) - r ** (-7))
+
+    x_plot = x_test.copy()
+    y_plot = y_test.copy()
+    y_model = model(x_plot)
+    dy_model = -model.derivative(tf.convert_to_tensor(x_plot))
+
+    x_plot = np.array(x_plot).reshape(-1)
+    y_plot = np.array(y_plot).reshape(-1)
+    y_model = np.array(y_model).reshape(-1)
+    dy_model = np.array(dy_model).reshape(-1)
+
+    ind = np.argsort(x_plot)
+    x_plot = x_plot[ind]
+    y_plot = y_plot[ind]
+    y_model = y_model[ind]
+    dy_model = dy_model[ind]
+
+    dy_plot = -lj_derivative(x_plot)
+
+    plt.plot(x_plot, y_plot)
+    plt.plot(x_plot, y_model)
+    plt.title("Neural network potential comparison")
+    plt.xlabel("Radial distance r")
+    plt.ylabel("Potential energy V(r)")
+    plt.legend(["Lennard-Jones", "Neural Network"])
+    plt.savefig("potential_comparison.png")
+    plt.clf()
+
+    plt.plot(x_plot, abs(y_model - y_plot))
+    plt.title("Relative error of neural network")
+    plt.xlabel("Radial distance r")
+    plt.ylabel("Relative error")
+    plt.savefig("potential_relative_error.png")
+    plt.clf()
+
+    plt.plot(x_plot, dy_plot)
+    plt.plot(x_plot, dy_model)
+    plt.title("Derivative of neural network potential")
+    plt.xlabel("Radial distance r")
+    plt.ylabel("Force dV(r)")
+    plt.legend(["Lennard-Jones", "Neural Network"])
+    plt.savefig("force_comparison.png")
+    plt.clf()
+
+    plt.plot(x_plot, abs(dy_model - dy_plot))
+    plt.title("Relative error of neural network force")
+    plt.xlabel("Radial distance r")
+    plt.ylabel("Relative error")
+    plt.savefig("force_relative_error.png")
+    plt.clf()
+
+
 (x_train, y_train), (x_test, y_test) = lennard_jones_data()
 
 train_ds = (
@@ -85,28 +139,4 @@ for epoch in range(epochs):
     template = "Epoch {}, Loss: {}, Test Loss: {}"
     print(template.format(epoch + 1, train_loss.result(), test_loss.result()))
 
-lj_derivative = lambda r: -24 * (2 * r ** (-13) - r ** (-7))
-
-x_plot = x_test.copy()
-y_plot = y_test.copy()
-y_model = model(x_plot)
-dy_model = model.derivative(tf.convert_to_tensor(x_plot))
-
-x_plot = np.array(x_plot).reshape(-1)
-y_plot = np.array(y_plot).reshape(-1)
-y_model = np.array(y_model).reshape(-1)
-dy_model = np.array(dy_model).reshape(-1)
-
-ind = np.argsort(x_plot)
-x_plot = x_plot[ind]
-y_plot = y_plot[ind]
-y_model = y_model[ind]
-dy_model = dy_model[ind]
-
-plt.plot(x_plot, y_plot)
-plt.plot(x_plot, y_model)
-plt.show()
-
-plt.plot(x_plot, -lj_derivative(x_plot))
-plt.plot(x_plot, -dy_model)
-plt.show()
+plot_network_and_derivative(x_test, y_test, model)
