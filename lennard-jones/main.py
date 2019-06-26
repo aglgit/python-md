@@ -15,11 +15,12 @@ if __name__ == "__main__":
     test_filename = "test.traj"
     amp_test_filename = "amp_test.traj"
     log_file = "amp-log.txt"
-    conv_file = "convergence.png"
-    rdf_file = "rdf.png"
-    msd_file = "msd.png"
-    energy_file = "energy.png"
-    G = None
+
+    conv_file = "convergence_{}.png".format(system)
+    rdf_file = "rdf_{}.png".format(system)
+    msd_file = "msd_{}.png".format(system)
+    energy_file = "energy_{}.png".format(system)
+    Gs = None
 
     anl = Analyzer()
     plt = Plotter()
@@ -40,4 +41,4 @@ if __name__ == "__main__":
     steps, energy_exact, energy_amp = anl.calculate_energy_diff(
         test_filename, amp_test_filename
     )
-    plt.plot_energy_diff(energy_file, steps, energy_exact, energy_amp)
+    plt.plot_energy_diff(energy_file, legend, steps, energy_exact, energy_amp)

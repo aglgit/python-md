@@ -6,6 +6,7 @@ import os
 from asap3 import OpenKIMcalculator
 from analysis import Analyzer
 from plot import Plotter
+from trainer import Trainer
 
 
 if __name__ == "__main__":
@@ -21,12 +22,24 @@ if __name__ == "__main__":
     energy_file = "energy_{}.png".format(system)
     Gs = None
 
+    temp = 2000
+    n_train = int(1e4)
+    force_coefficient = 0.04
+    convergence = {"energy_rmse": 1e-6, "force_rmse": 1e-3, "max_steps": int(1e4)}
+
+    trn = Trainer(n_train=n_train, temp=temp)
     anl = Analyzer()
     plt = Plotter()
     if not os.path.exists("amp.amp"):
-        anl.train_amp(calc, system, Gs, train_filename)
+        trn.train_amp(
+            calc,
+            system,
+            train_filename,
+            force_coefficient=force_coefficient,
+            convergence=convergence,
+        )
     plt.plot_rmse(log_file, conv_file)
-    anl.test_amp(calc, system, test_filename, amp_test_filename)
+    trn.test_amp(calc, system, test_filename, amp_test_filename)
 
     x, rdf = anl.calculate_rdf(test_filename)
     x, amp_rdf = anl.calculate_rdf(amp_test_filename)

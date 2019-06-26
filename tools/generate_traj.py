@@ -33,7 +33,7 @@ class GenerateTrajectory:
     def stillinger_weber_system(self, size, temp):
         self.atoms = Diamond(size=size, symbol="Si", pbc=True)
 
-    def create_traj(self, filename, n_steps, save_interval, timestep=5.0):
+    def create_traj(self, filename, n_steps, save_interval, timestep=1.0):
         if os.path.exists(filename):
             print("File {} already exists!".format(filename))
             return
@@ -44,9 +44,10 @@ class GenerateTrajectory:
         self.atoms.get_potential_energy()
         self.atoms.get_kinetic_energy()
         self.atoms.get_forces()
+        energy = self.atoms.get_total_energy()
         traj.write(self.atoms)
 
-        print("Timestep: 0")
+        print("Timestep: 0, total energy: {}".format(energy))
 
         dyn = VelocityVerlet(self.atoms, timestep=timestep * units.fs)
         count = n_steps // save_interval
@@ -56,7 +57,10 @@ class GenerateTrajectory:
             self.atoms.get_kinetic_energy()
             self.atoms.get_forces()
             traj.write(self.atoms)
-            print("Timestep: {}".format((i + 1) * save_interval))
+            energy = self.atoms.get_total_energy()
+            print(
+                "Timestep: {}, total energy: {}".format((i + 1) * save_interval, energy)
+            )
 
         print("Finished generating traj {}".format(filename))
 
