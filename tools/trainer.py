@@ -13,8 +13,8 @@ class Trainer:
         n_train=int(1e4),
         n_test=int(1e3),
         save_interval=50,
-        size=(3, 3, 3),
-        temp=1500,
+        size=(2, 2, 2),
+        temp=1000,
     ):
         self.n_train = n_train
         self.n_test = n_test
@@ -32,11 +32,12 @@ class Trainer:
         force_coefficient=None,
         hidden_layers=(10, 10, 10),
         activation="tanh",
+        cutoff=6.0,
         Gs=None,
     ):
         xyz_filename = "".join((train_filename.split(".")[0], ".xyz"))
         if convergence is None:
-            convergence = {"energy_rmse": 1e-6}
+            convergence = {"energy_rmse": 1e-3}
 
         generator = GenerateTrajectory()
         generator.generate_system(calc, system, self.size, self.temp)
@@ -46,7 +47,7 @@ class Trainer:
         print("Training from traj: {}".format(train_filename))
 
         traj = ase.io.read(train_filename, ":")
-        descriptor = Gaussian(Gs=Gs, fortran=True)
+        descriptor = Gaussian(cutoff=cutoff, Gs=Gs, fortran=True)
         loss_function = LossFunction(
             convergence=convergence,
             energy_coefficient=energy_coefficient,

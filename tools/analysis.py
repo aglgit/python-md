@@ -4,6 +4,9 @@ from asap3.analysis.rdf import RadialDistributionFunction
 
 
 class Analyzer:
+    def __init__(self, save_interval):
+        self.save_interval = save_interval
+
     def calculate_rdf(self, traj_file, rmax=10.0, nbins=100):
         traj = ase.io.read(traj_file, ":")
         x = (np.arange(nbins) + 0.5) * rmax / nbins

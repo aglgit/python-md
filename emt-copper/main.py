@@ -3,16 +3,14 @@ import sys
 sys.path.insert(0, "../tools")
 
 import os
-from ase.calculators.lj import LennardJones
+from asap3 import EMT
 from analysis import Analyzer
 from plot import Plotter
 from trainer import Trainer
 
 if __name__ == "__main__":
-    sigma = 3.405
-    epsilon = 1.0318e-2
-    calc = LennardJones(sigma=sigma, epsilon=epsilon)
-    system = "lennard_jones"
+    calc = EMT()
+    system = "copper"
 
     train_filename = "training.traj"
     test_filename = "test.traj"
@@ -23,13 +21,13 @@ if __name__ == "__main__":
     msd_file = "msd_{}.png".format(system)
     energy_file = "energy_{}.png".format(system)
 
-    n_train = int(4e5)
+    n_train = int(1e5)
     size = (3, 3, 3)
     save_interval = 10
-    temp = 350
+    temp = 500
 
     convergence = {"energy_rmse": 1e-6, "max_steps": int(1e4)}
-    cutoff = 4.0
+    cutoff = 6.5
     Gs = None
 
     anl = Analyzer(save_interval=save_interval)
@@ -42,7 +40,7 @@ if __name__ == "__main__":
 
     x, rdf = anl.calculate_rdf(test_filename)
     x, amp_rdf = anl.calculate_rdf(amp_test_filename)
-    legend = ["Lennard-Jones", "AMP"]
+    legend = ["EMT", "AMP"]
     plt.plot_rdf(rdf_file, legend, x, rdf, amp_rdf)
 
     steps, msd = anl.calculate_msd(test_filename)

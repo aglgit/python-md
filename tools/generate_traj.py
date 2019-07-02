@@ -15,6 +15,7 @@ class GenerateTrajectory:
         self.systems = {
             "lennard_jones": self.lennard_jones_system,
             "stillinger_weber": self.stillinger_weber_system,
+            "copper": self.copper_system,
         }
 
     def generate_system(self, calc, system, size, temp):
@@ -32,6 +33,9 @@ class GenerateTrajectory:
 
     def stillinger_weber_system(self, size, temp):
         self.atoms = Diamond(size=size, symbol="Si", pbc=True)
+
+    def copper_system(self, size, temp):
+        self.atoms = FaceCenteredCubic(size=size, symbol="Cu", pbc=True)
 
     def create_traj(self, filename, n_steps, save_interval, timestep=1.0):
         if os.path.exists(filename):

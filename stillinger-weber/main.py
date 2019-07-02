@@ -22,13 +22,15 @@ if __name__ == "__main__":
     energy_file = "energy_{}.png".format(system)
     Gs = None
 
+    n_train = int(1e5)
+    save_interval = 10
+    size = (3, 3, 3)
     temp = 2000
-    n_train = int(1e4)
-    force_coefficient = 0.04
-    convergence = {"energy_rmse": 1e-6, "force_rmse": 1e-3, "max_steps": int(1e4)}
+    force_coefficient = None
+    convergence = {"energy_rmse": 1e-6, "force_rmse": None, "max_steps": int(1e4)}
 
-    trn = Trainer(n_train=n_train, temp=temp)
-    anl = Analyzer()
+    trn = Trainer(n_train=n_train, save_interval=save_interval, size=size, temp=temp)
+    anl = Analyzer(save_interval=save_interval)
     plt = Plotter()
     if not os.path.exists("amp.amp"):
         trn.train_amp(
