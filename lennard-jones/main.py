@@ -23,20 +23,21 @@ if __name__ == "__main__":
     msd_file = "msd_{}.png".format(system)
     energy_file = "energy_{}.png".format(system)
 
-    n_train = int(4e5)
-    size = (3, 3, 3)
+    n_train = int(1e5)
+    size = (5, 5, 5)
     save_interval = 10
-    temp = 350
+    temp = 300
 
     convergence = {"energy_rmse": 1e-6, "max_steps": int(1e4)}
     cutoff = 4.0
     Gs = None
 
-    anl = Analyzer(save_interval=save_interval)
-    plt = Plotter()
     trn = Trainer(n_train=n_train, size=size, save_interval=save_interval, temp=temp)
     if not os.path.exists("amp.amp"):
         trn.train_amp(calc, system, convergence=convergence, cutoff=cutoff, Gs=Gs)
+
+    anl = Analyzer(save_interval=save_interval)
+    plt = Plotter()
     plt.plot_rmse(log_file, conv_file)
     trn.test_amp(calc, system, test_filename, amp_test_filename)
 

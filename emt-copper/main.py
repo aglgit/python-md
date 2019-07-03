@@ -22,12 +22,12 @@ if __name__ == "__main__":
     energy_file = "energy_{}.png".format(system)
 
     n_train = int(1e5)
-    size = (3, 3, 3)
+    size = (5, 5, 5)
     save_interval = 10
-    temp = 500
+    temp = 300
 
     convergence = {"energy_rmse": 1e-6, "max_steps": int(1e4)}
-    cutoff = 6.5
+    cutoff = 6.0
     Gs = None
 
     anl = Analyzer(save_interval=save_interval)

@@ -17,7 +17,7 @@ calc = LennardJones(sigma=sigma, epsilon=epsilon)
 atoms = Atoms([Atom("Ar", (0, 0, 0)), Atom("Ar", (0, 0, 0))])
 atoms.set_calculator(calc)
 
-dist = np.linspace(0.95, 3.0, 1000)*sigma
+dist = np.linspace(0.95, 3.0, 1000) * sigma
 pot = np.zeros_like(dist)
 
 for i, r in enumerate(dist):
