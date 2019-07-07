@@ -9,6 +9,7 @@ class Analyzer:
 
     def calculate_rdf(self, traj_file, rmax=10.0, nbins=100):
         traj = ase.io.read(traj_file, ":")
+
         x = (np.arange(nbins) + 0.5) * rmax / nbins
         rdf_obj = None
         for atoms in traj:
@@ -35,6 +36,18 @@ class Analyzer:
         return steps, msd
 
     def calculate_energy_diff(self, test_traj_file, amp_traj_file):
+        test_traj = ase.io.read(test_traj_file, ":")
+        amp_traj = ase.io.read(amp_traj_file, ":")
+
+        num_images = len(test_traj)
+        steps = np.arange(num_images) * self.save_interval
+        energy_exact = np.zeros(num_images)
+        energy_amp = np.zeros(num_images)
+        for i in range(num_images):
+            energy_exact[i] = test_traj[i].get_total_energy()
+            energy_amp[i] = amp_traj[i].get_total_energy()
+
+    def calculate_pot_energy_diff(self, test_traj_file, amp_traj_file):
         test_traj = ase.io.read(test_traj_file, ":")
         amp_traj = ase.io.read(amp_traj_file, ":")
 

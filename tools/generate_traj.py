@@ -13,13 +13,13 @@ from ase.md.verlet import VelocityVerlet
 class GenerateTrajectory:
     def __init__(self):
         self.systems = {
-            "lennard_jones": self.lennard_jones_system,
-            "stillinger_weber": self.stillinger_weber_system,
+            "argon": self.argon_system,
+            "silicon": self.silicon_system,
             "copper": self.copper_system,
         }
 
     def generate_system(self, calc, system, size, temp):
-        if system in self.systems:
+        if system in self.systems.keys():
             self.systems[system](size, temp)
             MaxwellBoltzmannDistribution(self.atoms, temp * units.kB)
             Stationary(self.atoms)
@@ -28,10 +28,10 @@ class GenerateTrajectory:
         else:
             print("System {} not found!".format(system))
 
-    def lennard_jones_system(self, size, temp):
+    def argon_system(self, size, temp):
         self.atoms = FaceCenteredCubic(size=size, symbol="Ar", pbc=True)
 
-    def stillinger_weber_system(self, size, temp):
+    def silicon_system(self, size, temp):
         self.atoms = Diamond(size=size, symbol="Si", pbc=True)
 
     def copper_system(self, size, temp):
@@ -41,9 +41,9 @@ class GenerateTrajectory:
         if os.path.exists(filename):
             print("File {} already exists!".format(filename))
             return
-        traj = ase.io.Trajectory(filename, "w")
 
         print("Generating traj {}".format(filename))
+        traj = ase.io.Trajectory(filename, "w")
 
         self.atoms.get_potential_energy()
         self.atoms.get_kinetic_energy()
@@ -51,7 +51,8 @@ class GenerateTrajectory:
         energy = self.atoms.get_total_energy()
         traj.write(self.atoms)
 
-        print("Timestep: 0, total energy: {}".format(energy))
+        self.timestep = 0
+        print("Timestep: {}, total energy: {}".format(self.timestep, energy))
 
         dyn = VelocityVerlet(self.atoms, timestep=timestep * units.fs)
         count = n_steps // save_interval
@@ -60,21 +61,54 @@ class GenerateTrajectory:
             self.atoms.get_potential_energy()
             self.atoms.get_kinetic_energy()
             self.atoms.get_forces()
-            traj.write(self.atoms)
             energy = self.atoms.get_total_energy()
-            print(
-                "Timestep: {}, total energy: {}".format((i + 1) * save_interval, energy)
-            )
+            traj.write(self.atoms)
+            self.timestep += save_interval
+            print("Timestep: {}, total energy: {}".format(self.timestep, energy))
 
         print("Finished generating traj {}".format(filename))
 
-    def convert_traj(self, infile, outfile):
-        print("Converting {} to {}".format(infile, outfile))
+    def continue_traj(
+        self, filename, new_filename, n_steps, save_interval, timestep=1.0
+    ):
+        if os.path.exists(new_filename):
+            print("File {} already exists!".format(new_filename))
+            return
 
-        if not os.path.exists(infile):
-            print("No such file {}!".format(infile))
-        elif os.path.exists(outfile):
-            print("File {} already exists!".format(outfile))
+        print("Continuing traj {}".format(filename))
+        traj = ase.io.read(filename, ":")
+        self.atoms = traj[-1]
+        traj = ase.io.Trajectory(new_filename, "w")
+
+        self.atoms.get_potential_energy()
+        self.atoms.get_kinetic_energy()
+        self.atoms.get_forces()
+        energy = self.atoms.get_total_energy()
+        traj.write(self.atoms)
+
+        print("Timestep: {}, total energy: {}".format(self.timestep, energy))
+
+        dyn = VelocityVerlet(self.atoms, timestep=timestep * units.fs)
+        count = n_steps // save_interval
+        for i in range(count):
+            dyn.run(save_interval)
+            self.atoms.get_potential_energy()
+            self.atoms.get_kinetic_energy()
+            self.atoms.get_forces()
+            energy = self.atoms.get_total_energy()
+            traj.write(self.atoms)
+            self.timestep += save_interval
+            print("Timestep: {}, total energy: {}".format(self.timestep, energy))
+
+        print("Finished generating traj {}".format(new_filename))
+
+    def convert_traj(self, traj_file):
+        xyz_file = "".join((traj_file.split(".")[0], ".xyz"))
+        if not os.path.exists(traj_file):
+            print("No such file {}!".format(traj_file))
+        elif os.path.exists(xyz_file):
+            print("File {} already exists!".format(xyz_file))
         else:
-            traj = ase.io.read(infile, ":")
-            ase.io.write(outfile, traj)
+            print("Converting {} to {}".format(traj_file, xyz_file))
+            traj = ase.io.read(traj_file, ":")
+            ase.io.write(xyz_file, traj)

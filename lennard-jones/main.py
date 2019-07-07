@@ -2,55 +2,77 @@ import sys
 
 sys.path.insert(0, "../tools")
 
+import argparse
 import os
 from ase.calculators.lj import LennardJones
-from analysis import Analyzer
-from plot import Plotter
+from amp import Amp
+from generate_traj import GenerateTrajectory
 from trainer import Trainer
 
+
 if __name__ == "__main__":
-    sigma = 3.405
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--generate", dest="generate", action="store_true")
+    parser.add_argument("--no-generate", dest="generate", action="store_false")
+    parser.add_argument("--train", dest="train", action="store_true")
+    parser.add_argument("--no-train", dest="train", action="store_false")
+    parser.add_argument("--test", dest="test", action="store_true")
+    parser.add_argument("--no-test", dest="test", action="store_false")
+    parser.set_defaults(generate=False, train=False, test=False)
+
+    args = parser.parse_args()
+    generate = args.generate
+    train = args.train
+    test = args.test
+
+    system = "argon"
     epsilon = 1.0318e-2
-    calc = LennardJones(sigma=sigma, epsilon=epsilon)
-    system = "lennard_jones"
+    sigma = 3.405
+    train_traj = "training.traj"
 
-    train_filename = "training.traj"
-    test_filename = "test.traj"
-    amp_test_filename = "amp_test.traj"
-    log_file = "amp-log.txt"
-    conv_file = "convergence_{}.png".format(system)
-    rdf_file = "rdf_{}.png".format(system)
-    msd_file = "msd_{}.png".format(system)
-    energy_file = "energy_{}.png".format(system)
-
-    n_train = int(1e5)
-    size = (5, 5, 5)
+    n_train = int(1e3)
     save_interval = 10
+    size = (2, 2, 2)
     temp = 300
 
-    convergence = {"energy_rmse": 1e-6, "max_steps": int(1e4)}
-    cutoff = 4.0
-    Gs = None
+    trn = Trainer()
 
-    trn = Trainer(n_train=n_train, size=size, save_interval=save_interval, temp=temp)
-    if not os.path.exists("amp.amp"):
-        trn.train_amp(calc, system, convergence=convergence, cutoff=cutoff, Gs=Gs)
+    if generate:
+        calc = LennardJones(epsilon=epsilon, sigma=sigma)
+        generator = GenerateTrajectory()
+        generator.generate_system(calc, system, size, temp)
+        generator.create_traj(train_traj, n_train, save_interval)
+        generator.convert_traj(train_traj)
 
-    anl = Analyzer(save_interval=save_interval)
-    plt = Plotter()
-    plt.plot_rmse(log_file, conv_file)
-    trn.test_amp(calc, system, test_filename, amp_test_filename)
+    if train:
+        train_traj = "training.traj"
+        convergence = {"energy_rmse": 1e-9, "force_rmse": None, "max_steps": int(2e3)}
+        force_coefficient = None
+        hidden_layers = (40, 20, 10)
+        cutoff = 4.0
+        Gs = None
 
-    x, rdf = anl.calculate_rdf(test_filename)
-    x, amp_rdf = anl.calculate_rdf(amp_test_filename)
-    legend = ["Lennard-Jones", "AMP"]
-    plt.plot_rdf(rdf_file, legend, x, rdf, amp_rdf)
+        if not os.path.exists("amp.amp"):
+            trn.train_amp(
+                train_traj,
+                convergence=convergence,
+                force_coefficient=force_coefficient,
+                hidden_layers=hidden_layers,
+                cutoff=cutoff,
+                Gs=Gs,
+            )
+        else:
+            print("Trained AMP calculator amp.amp already exists!")
 
-    steps, msd = anl.calculate_msd(test_filename)
-    steps, amp_msd = anl.calculate_msd(amp_test_filename)
-    plt.plot_msd(msd_file, legend, steps, msd, amp_msd)
+    if test:
+        test_traj = "test.traj"
+        amp_test_traj = "amp_test.traj"
 
-    steps, energy_exact, energy_amp = anl.calculate_energy_diff(
-        test_filename, amp_test_filename
-    )
-    plt.plot_energy_diff(energy_file, legend, steps, energy_exact, energy_amp)
+        if os.path.exists("amp.amp"):
+            calc = LennardJones(epsilon=epsilon, sigma=sigma)
+            amp_calc = Amp.load("amp.amp")
+            trn.test_amp(
+                calc, system, amp_calc, test_traj, amp_test_traj, size=size, temp=temp
+            )
+        else:
+            print("No trained AMP calculator amp.amp!")

@@ -27,7 +27,6 @@ class Plotter:
         plt.title("Energy and force Root Mean Square Error")
         plt.legend()
         plt.xlabel("Steps")
-        plt.ylabel("Error [eV, eV/Å]")
         plt.savefig(plot_file)
         plt.clf()
 
@@ -56,6 +55,19 @@ class Plotter:
     def plot_energy_diff(self, plot_file, legend, steps, energy_exact, energy_amp):
         plt.plot(steps, energy_exact)
         plt.plot(steps, energy_amp)
+
+        plt.title("Total energy as a function of time")
+        plt.legend(legend)
+        plt.xlabel("Steps")
+        plt.ylabel("Total energy [eV]")
+        plt.savefig(plot_file)
+        plt.clf()
+
+    def plot_pot_energy_diff(
+        self, plot_file, legend, steps, pot_energy_exact, pot_energy_amp
+    ):
+        plt.plot(steps, pot_energy_exact)
+        plt.plot(steps, pot_energy_amp)
 
         plt.title("Potential energy as a function of time")
         plt.legend(legend)

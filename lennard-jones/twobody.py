@@ -11,8 +11,8 @@ if not os.path.exists("amp.amp"):
 else:
     amp_calc = Amp.load("amp.amp")
 
-sigma = 3.405
 epsilon = 1.0318e-2
+sigma = 3.405
 calc = LennardJones(sigma=sigma, epsilon=epsilon)
 atoms = Atoms([Atom("Ar", (0, 0, 0)), Atom("Ar", (0, 0, 0))])
 atoms.set_calculator(calc)

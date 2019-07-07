@@ -1,52 +1,30 @@
+import os
 import ase.io
-from generate_traj import GenerateTrajectory
-
 from amp import Amp
 from amp.descriptor.gaussian import Gaussian
 from amp.model.neuralnetwork import NeuralNetwork
 from amp.model import LossFunction
+from generate_traj import GenerateTrajectory
 
 
 class Trainer:
-    def __init__(
-        self,
-        n_train=int(1e4),
-        n_test=int(1e3),
-        save_interval=50,
-        size=(2, 2, 2),
-        temp=1000,
-    ):
-        self.n_train = n_train
-        self.n_test = n_test
-        self.save_interval = save_interval
-        self.size = size
-        self.temp = temp
-
     def train_amp(
         self,
-        calc,
-        system,
-        train_filename="training.traj",
+        traj_file,
         convergence=None,
         energy_coefficient=1.0,
         force_coefficient=None,
-        hidden_layers=(10, 10, 10),
+        hidden_layers=(10),
         activation="tanh",
         cutoff=6.0,
         Gs=None,
     ):
-        xyz_filename = "".join((train_filename.split(".")[0], ".xyz"))
+        print("Training from traj: {}".format(traj_file))
+        traj = ase.io.read(traj_file, ":")
+
         if convergence is None:
-            convergence = {"energy_rmse": 1e-3}
+            convergence = {"energy_rmse": 1e-3, "max_steps": int(1e3)}
 
-        generator = GenerateTrajectory()
-        generator.generate_system(calc, system, self.size, self.temp)
-        generator.create_traj(train_filename, self.n_train, self.save_interval)
-        generator.convert_traj(train_filename, xyz_filename)
-
-        print("Training from traj: {}".format(train_filename))
-
-        traj = ase.io.read(train_filename, ":")
         descriptor = Gaussian(cutoff=cutoff, Gs=Gs, fortran=True)
         loss_function = LossFunction(
             convergence=convergence,
@@ -59,20 +37,31 @@ class Trainer:
             lossfunction=loss_function,
         )
 
-        calc = Amp(descriptor=descriptor, model=model)
-        calc.train(images=traj)
+        if os.path.exists("amp.amp"):
+            calc = Amp.load("amp.amp")
+            calc.train(images=traj)
+        else:
+            calc = Amp(descriptor=descriptor, model=model)
+            calc.train(images=traj)
 
-    def test_amp(self, calc, system, test_filename, amp_test_filename):
-        amp_calc = Amp.load("amp.amp")
-
-        xyz_test_filename = "".join((test_filename.split(".")[0], ".xyz"))
+    def test_amp(
+        self,
+        calc,
+        system,
+        amp_calc,
+        test_traj,
+        amp_test_traj,
+        n_test=int(1e3),
+        save_interval=10,
+        size=(2, 2, 2),
+        temp=300,
+    ):
         generator = GenerateTrajectory()
-        generator.generate_system(calc, system, self.size, self.temp)
-        generator.create_traj(test_filename, self.n_test, self.save_interval)
-        generator.convert_traj(test_filename, xyz_test_filename)
+        generator.generate_system(calc, system, size, temp)
+        generator.create_traj(test_traj, n_test, save_interval)
+        generator.convert_traj(test_traj)
 
-        xyz_amp_test_filename = "".join((amp_test_filename.split(".")[0], ".xyz"))
         amp_generator = GenerateTrajectory()
-        amp_generator.generate_system(amp_calc, system, self.size, self.temp)
-        amp_generator.create_traj(amp_test_filename, self.n_test, self.save_interval)
-        amp_generator.convert_traj(amp_test_filename, xyz_amp_test_filename)
+        generator.generate_system(amp_calc, system, size, temp)
+        generator.create_traj(amp_test_traj, n_test, save_interval)
+        generator.convert_traj(amp_test_traj)
