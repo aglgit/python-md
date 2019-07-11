@@ -49,12 +49,38 @@ if __name__ == "__main__":
     plt = Plotter()
     trn = Trainer()
 
-    if generate:
+    if train_cont:
+        train_folder = "traj"
+        if not os.path.exists(train_folder)
+            os.mkdir(train_folder)
+        train_trajs = [os.path.join(train_folder, "training_{}.traj".format(i)) for i in range(1,11)]
         calc = EMT()
         generator = GenerateTrajectory()
         generator.generate_system(calc, system, size, temp)
         generator.create_traj(train_traj, n_train, save_interval)
         generator.convert_traj(train_traj)
+
+
+    if generate:
+        calc = EMT()
+        generator = GenerateTrajectory()
+        generator.generate_system(calc, system, size, temp)
+        generator.create_traj(train_traj, n_train, save_interval)
+
+        convergence = {"energy_rmse": 1e-9, "force_rmse": None, "max_steps": int(2e3)}
+        force_coefficient = None
+        hidden_layers = (40, 40)
+        cutoff = Polynomial(6.0)
+        Gs = None
+
+        trn.train_amp(
+            train_traj,
+            convergence=convergence,
+            force_coefficient=force_coefficient,
+            hidden_layers=hidden_layers,
+            cutoff=cutoff,
+            Gs=Gs,
+        )
 
     if train:
         convergence = {"energy_rmse": 1e-9, "force_rmse": None, "max_steps": int(2e3)}

@@ -1,10 +1,11 @@
 import ase.io
 import numpy as np
+from asap3.analysis import CoordinationNumbers
 from asap3.analysis.rdf import RadialDistributionFunction
 
 
 class Analyzer:
-    def __init__(self, save_interval):
+    def __init__(self, save_interval=10):
         self.save_interval = save_interval
 
     def calculate_rdf(self, traj_file, rmax=10.0, nbins=100):
@@ -21,6 +22,23 @@ class Analyzer:
         rdf = rdf_obj.get_rdf()
 
         return x, rdf
+
+    def calculate_coordination_number(self, traj_file, r_cut):
+        traj = ase.io.read(traj_file, ":")
+
+        coord_min_max = np.zeros((len(traj), 2))
+        coord_all_avg = np.zeros(len(traj))
+
+        for i, atoms in enumerate(traj):
+            c = CoordinationNumbers(atoms, rCut=r_cut)
+            coord_min_max[i] = c.min(), c.max()
+            coord_all_avg[i] = np.mean(c)
+
+        coord_min = coord_min_max[:, 0].min()
+        coord_max = coord_min_max[:, 1].max()
+        coord_avg = np.mean(coord_all_avg)
+
+        return coord_min, coord_max, coord_avg
 
     def calculate_msd(self, traj_file):
         traj = ase.io.read(traj_file, ":")
@@ -46,6 +64,8 @@ class Analyzer:
         for i in range(num_images):
             energy_exact[i] = test_traj[i].get_total_energy()
             energy_amp[i] = amp_traj[i].get_total_energy()
+
+        return steps, energy_exact, energy_amp
 
     def calculate_pot_energy_diff(self, test_traj_file, amp_traj_file):
         test_traj = ase.io.read(test_traj_file, ":")

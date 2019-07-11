@@ -28,9 +28,9 @@ if __name__ == "__main__":
     system = "silicon"
     train_traj = "training.traj"
 
-    n_train = int(1e3)
+    n_train = int(1e5)
     save_interval = 10
-    size = (2, 2, 2)
+    size = (6, 6, 6)
     temp = 300
 
     trn = Trainer()

@@ -39,6 +39,7 @@ class Trainer:
 
         if os.path.exists("amp.amp"):
             calc = Amp.load("amp.amp")
+            #try catch TrainingConvergenceError
             calc.train(images=traj)
         else:
             calc = Amp(descriptor=descriptor, model=model)
