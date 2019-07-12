@@ -4,16 +4,14 @@ sys.path.insert(0, "../tools")
 
 import argparse
 import os
-import numpy as np
 from asap3 import EMT
+from ase.io import read
 from amp import Amp
+from amp.utilities import Annealer
 from amp.descriptor.cutoffs import Polynomial
-from amp.descriptor.gaussian import make_symmetry_functions
-from analysis import Analyzer
-from generate_traj import GenerateTrajectory
-from plot import Plotter
-from trainer import Trainer
-
+from build_atoms import AtomBuilder
+from create_traj import CreateTrajectory
+from train_amp import Trainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -34,58 +32,87 @@ if __name__ == "__main__":
     analyze = args.analyze
 
     system = "copper"
-
-    n_train = int(6e4)
-    save_interval = 10
     size = (4, 4, 4)
-    temp = 2000
+    temp = 300
 
-    train_traj = "training.traj"
+    metastep = 20
+    train_dir = "trajs"
+    if not os.path.exists(train_dir):
+        os.mkdir(train_dir)
+    train_trajs = [
+        os.path.join(train_dir, "training_{}.traj".format(i))
+        for i in range(1, metastep + 1)
+    ]
+    n_train = int(1e3)
+    save_interval = 10
+
+    convergence = {"energy_rmse": 1e-9, "force_rmse": 1e-3, "max_steps": int(1e3)}
+    energy_coefficient = 1.0
+    force_coefficient = 0.1
+    hidden_layers = (10, 10)
+    activation = "tanh"
+    cutoff = Polynomial(6.0)
+    Gs = None
+
+    n_test = int(1e3)
     test_traj = "test.traj"
     amp_test_traj = "amp_test.traj"
-    legend = ["EMT", "AMP"]
-
-    anl = Analyzer(save_interval)
-    plt = Plotter()
-    trn = Trainer()
 
     if generate:
+        atmb = AtomBuilder()
+        atoms = atmb.build_atoms(system, size, temp)
         calc = EMT()
-        generator = GenerateTrajectory()
-        generator.generate_system(calc, system, size, temp)
-        generator.create_traj(train_traj, n_train, save_interval)
-        generator.convert_traj(train_traj)
+        atoms.set_calculator(calc)
+
+        ctrj = CreateTrajectory()
+        for i in range(metastep):
+            train_traj = train_trajs[i]
+            print("Creating trajectory {}".format(train_traj))
+            ctrj.integrate_atoms(atoms, train_traj, n_train, save_interval)
+        xyz_file = "training.xyz"
+        ctrj.concat_trajectories(train_dir, xyz_file)
 
     if train:
-        convergence = {"energy_rmse": 1e-9, "force_rmse": None, "max_steps": int(2e3)}
-        force_coefficient = None
-        hidden_layers = (40, 40)
-        cutoff = Polynomial(6.0)
-        Gs = None
-
-        if not os.path.exists("amp.amp"):
-            trn.train_amp(
-                train_traj,
+        if os.path.exists("amp.amp"):
+            print("Trained AMP calculator amp.amp already exists!")
+        else:
+            trn = Trainer(
                 convergence=convergence,
+                energy_coefficient=energy_coefficient,
                 force_coefficient=force_coefficient,
                 hidden_layers=hidden_layers,
+                activation=activation,
                 cutoff=cutoff,
                 Gs=Gs,
             )
-        else:
-            print("Trained AMP calculator amp.amp already exists!")
+            amp_calc = trn.create_calc()
+
+            print("Performing global search with annealer")
+            images = read(train_trajs[0], ":")
+            Annealer(calc=amp_calc, images=images, Tmax=20, Tmin=1, steps=500)
+
+            for i in range(metastep):
+                train_traj = train_trajs[i]
+                print("Training from trajectory {}!".format(train_traj))
+                amp_calc.train(train_traj)
 
     if test:
-        if os.path.exists("amp.amp"):
-            calc = EMT()
-            amp_calc = Amp.load("amp.amp")
-            trn.test_amp(
-                calc, system, amp_calc, test_traj, amp_test_traj, size=size, temp=temp
-            )
+        if not os.path.exists("amp.amp"):
+            print("No trained AMP calculator amp.amp exists!")
         else:
-            print("No trained AMP calculator amp.amp!") 
+            atmb = AtomBuilder()
+            atoms = atmb.build_atoms(system, size, temp)
+            amp_atoms = atmb.build_atoms(system, size, temp)
+
+            calc = EMT()
+            atoms.set_calculator(calc)
+            amp_calc = Amp.load("amp.amp")
+            amp_atoms.set_calculator(amp_calc)
+
+            ctrj = CreateTrajectory()
+            ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
+            ctrj.steps = 0
+            ctrj.integrate_atoms(amp_atoms, amp_test_traj, n_test, save_interval)
+
     if analyze:
-        steps, exact_energy, amp_energy = anl.calculate_energy_diff(
-            test_traj, amp_test_traj
-        )
-        plt.plot_energy_diff("energy.png", legend, steps, exact_energy, amp_energy)
+        pass

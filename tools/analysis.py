@@ -1,5 +1,5 @@
-import ase.io
 import numpy as np
+from ase.io import read
 from asap3.analysis import CoordinationNumbers
 from asap3.analysis.rdf import RadialDistributionFunction
 
@@ -9,7 +9,7 @@ class Analyzer:
         self.save_interval = save_interval
 
     def calculate_rdf(self, traj_file, rmax=10.0, nbins=100):
-        traj = ase.io.read(traj_file, ":")
+        traj = read(traj_file, ":")
 
         x = (np.arange(nbins) + 0.5) * rmax / nbins
         rdf_obj = None
@@ -24,7 +24,7 @@ class Analyzer:
         return x, rdf
 
     def calculate_coordination_number(self, traj_file, r_cut):
-        traj = ase.io.read(traj_file, ":")
+        traj = read(traj_file, ":")
 
         coord_min_max = np.zeros((len(traj), 2))
         coord_all_avg = np.zeros(len(traj))
@@ -41,7 +41,7 @@ class Analyzer:
         return coord_min, coord_max, coord_avg
 
     def calculate_msd(self, traj_file):
-        traj = ase.io.read(traj_file, ":")
+        traj = read(traj_file, ":")
 
         steps = np.arange(len(traj)) * self.save_interval
         msd = np.zeros(len(traj))
@@ -54,8 +54,8 @@ class Analyzer:
         return steps, msd
 
     def calculate_energy_diff(self, test_traj_file, amp_traj_file):
-        test_traj = ase.io.read(test_traj_file, ":")
-        amp_traj = ase.io.read(amp_traj_file, ":")
+        test_traj = read(test_traj_file, ":")
+        amp_traj = read(amp_traj_file, ":")
 
         num_images = len(test_traj)
         steps = np.arange(num_images) * self.save_interval
@@ -68,8 +68,8 @@ class Analyzer:
         return steps, energy_exact, energy_amp
 
     def calculate_pot_energy_diff(self, test_traj_file, amp_traj_file):
-        test_traj = ase.io.read(test_traj_file, ":")
-        amp_traj = ase.io.read(amp_traj_file, ":")
+        test_traj = read(test_traj_file, ":")
+        amp_traj = read(amp_traj_file, ":")
 
         num_images = len(test_traj)
         steps = np.arange(num_images) * self.save_interval
