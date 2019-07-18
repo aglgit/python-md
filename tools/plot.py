@@ -75,3 +75,26 @@ class Plotter:
         plt.ylabel("Potential energy [eV]")
         plt.savefig(plot_file)
         plt.clf()
+
+    def plot_amp_error(
+        self,
+        energy_plot_file,
+        force_plot_file,
+        energy_exact,
+        energy_diff,
+        force_exact,
+        force_diff,
+    ):
+        plt.scatter(energy_exact, energy_diff)
+        plt.title("Scatterplot of energy error")
+        plt.xlabel("Exact energy")
+        plt.ylabel("abs(Exact energy - AMP energy) [eV]")
+        plt.savefig(energy_plot_file)
+        plt.clf()
+
+        plt.scatter(force_exact, force_diff)
+        plt.title("Scatterplot of force error")
+        plt.xlabel("Exact force")
+        plt.ylabel("abs(Exact force - AMP force) [eV/Å]")
+        plt.savefig(force_plot_file)
+        plt.clf()

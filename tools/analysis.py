@@ -80,3 +80,30 @@ class Analyzer:
             energy_amp[i] = amp_traj[i].get_potential_energy()
 
         return steps, energy_exact, energy_amp
+
+    def calculate_amp_error(self, test_traj_file, calc):
+        test_traj = read(test_traj_file, ":")
+
+        num_images = len(test_traj)
+        num_atoms = len(test_traj[0])
+        energy_exact = np.zeros(num_images)
+        energy_amp = np.zeros(num_images)
+        force_exact = np.zeros((num_images, 3 * num_atoms))
+        force_amp = np.zeros((num_images, 3 * num_atoms))
+        energy_diff = np.zeros(num_images)
+        force_diff = np.zeros((num_images, 3 * num_atoms))
+
+        for i in range(num_images):
+            energy_exact[i] = test_traj[i].get_potential_energy()
+            force_exact[i] = test_traj[i].get_forces().reshape(-1)
+
+            energy_amp[i] = calc.get_potential_energy(test_traj[i])
+            force_amp[i] = calc.get_forces(test_traj[i]).reshape(-1)
+
+            energy_diff[i] = abs(energy_exact[i] - energy_amp[i])
+            force_diff[i] = abs(force_exact[i] - force_amp[i])
+
+        force_exact = force_exact.reshape(-1)
+        force_diff = force_diff.reshape(-1)
+
+        return energy_exact, energy_diff, force_exact, force_diff

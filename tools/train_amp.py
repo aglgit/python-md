@@ -28,7 +28,7 @@ class Trainer:
         self.cutoff = cutoff
         self.Gs = Gs
 
-    def create_calc(self):
+    def create_calc(self, label="amp", dblabel=None):
         descriptor = Gaussian(cutoff=self.cutoff, Gs=self.Gs, fortran=True)
         loss_function = LossFunction(
             convergence=self.convergence,
@@ -40,6 +40,6 @@ class Trainer:
             activation=self.activation,
             lossfunction=loss_function,
         )
-        calc = Amp(descriptor=descriptor, model=model)
+        calc = Amp(descriptor=descriptor, model=model, label=label, dblabel=dblabel)
 
         return calc
