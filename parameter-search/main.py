@@ -73,32 +73,6 @@ if __name__ == "__main__":
         Polynomial(7.0),
     ]
 
-    elements = ["Cu"]
-    Gs = []
-    G2 = make_symmetry_functions(
-        elements=elements,
-        type="G2",
-        etas=np.logspace(np.log10(0.01), np.log10(5.0), num=10),
-    )
-    for eta in [0.01, 0.05, 0.1]:
-        G4 = make_symmetry_functions(
-            elements=elements,
-            type="G4",
-            etas=[eta],
-            zetas=[1.0, 2.0, 4.0, 16.0],
-            gammas=[1.0, -1.0],
-        )
-        G5 = make_symmetry_functions(
-            elements=elements,
-            type="G5",
-            etas=[eta],
-            zetas=[1.0, 2.0, 4.0, 16.0],
-            gammas=[1.0, -1.0],
-        )
-        Gs.append(G2 + G4)
-        Gs.append(G2 + G5)
-    parameters["Gs"] = Gs
-
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": int(1e3)}
     energy_coefficient = 1.0
     force_coefficient = 0.1

@@ -5,7 +5,7 @@ sys.path.insert(0, "../tools")
 import os
 from asap3 import EMT
 from amp import Amp
-from amp.descriptor.cutoffs import Cosine, Polynomial
+from amp.descriptor.cutoffs import Polynomial
 from build_atoms import AtomBuilder
 from create_traj import CreateTrajectory
 from train_amp import Trainer
@@ -34,45 +34,6 @@ if __name__ == "__main__":
         ctrj.integrate_atoms(atoms, train_traj, n_train, save_interval)
 
     logfile = "loss.txt"
-    parameters = {}
-    parameters["force_coefficient"] = [
-        1e-3,
-        5e-3,
-        1e-2,
-        2e-2,
-        5e-2,
-        7.5e-2,
-        1e-1,
-        2e-1,
-        3e-1,
-        5e-1,
-    ]
-    parameters["hidden_layers"] = [
-        (10),
-        (20),
-        (30),
-        (40),
-        (5, 5),
-        (10, 10),
-        (20, 10),
-        (30, 10),
-        (20, 20),
-        (40, 40),
-    ]
-    parameters["activation"] = ["tanh", "sigmoid"]
-    parameters["cutoff"] = [
-        Cosine(3.0),
-        Cosine(4.0),
-        Cosine(5.0),
-        Cosine(6.0),
-        Cosine(7.0),
-        Polynomial(3.0),
-        Polynomial(4.0),
-        Polynomial(5.0),
-        Polynomial(6.0),
-        Polynomial(7.0),
-    ]
-
     elements = ["Cu"]
     Gs = []
     G2 = make_symmetry_functions(
@@ -97,7 +58,6 @@ if __name__ == "__main__":
         )
         Gs.append(G2 + G4)
         Gs.append(G2 + G5)
-    parameters["Gs"] = Gs
 
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": int(1e3)}
     energy_coefficient = 1.0
@@ -105,7 +65,6 @@ if __name__ == "__main__":
     hidden_layers = (10, 10)
     activation = "tanh"
     cutoff = Polynomial(6.0)
-    Gs = None
 
     if not os.path.exists(logfile):
         log = open(logfile, "w")
@@ -133,7 +92,7 @@ if __name__ == "__main__":
             hidden_layers=hidden_layers,
             activation=activation,
             cutoff=cutoff,
-            Gs=Gs,
+            Gs=None,
         )
         amp_calc = trn.create_calc()
         loss, energy_rmse, force_rmse = amp_calc.train_return_loss(train_traj)
@@ -147,7 +106,7 @@ if __name__ == "__main__":
     else:
         log = open(logfile, "a")
 
-    for parameter in parameters.keys():
+    for G in Gs:
         trn = Trainer(
             convergence=convergence,
             energy_coefficient=energy_coefficient,
@@ -155,7 +114,7 @@ if __name__ == "__main__":
             hidden_layers=hidden_layers,
             activation=activation,
             cutoff=cutoff,
-            Gs=Gs,
+            Gs=G,
         )
         values = parameters[parameter]
         log.write("\n")
