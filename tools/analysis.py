@@ -93,6 +93,8 @@ class Analyzer:
         energy_diff = np.zeros(num_images)
         force_diff = np.zeros((num_images, 3 * num_atoms))
 
+        energy_rmse = 0.0
+        force_rmse = 0.0
         for i in range(num_images):
             energy_exact[i] = test_traj[i].get_potential_energy()
             force_exact[i] = test_traj[i].get_forces().reshape(-1)
@@ -100,10 +102,38 @@ class Analyzer:
             energy_amp[i] = calc.get_potential_energy(test_traj[i])
             force_amp[i] = calc.get_forces(test_traj[i]).reshape(-1)
 
+            energy_rmse += np.sum((energy_amp[i] - energy_amp[i]) ** 2)
+            force_rmse += np.sum((force_amp[i] - force_amp[i]) ** 2)
+
             energy_diff[i] = abs(energy_exact[i] - energy_amp[i])
             force_diff[i] = abs(force_exact[i] - force_amp[i])
 
         force_exact = force_exact.reshape(-1)
         force_diff = force_diff.reshape(-1)
 
-        return energy_exact, energy_diff, force_exact, force_diff
+        return (
+            energy_rmse,
+            force_rmse,
+            energy_exact,
+            energy_diff,
+            force_exact,
+            force_diff,
+        )
+
+    def calculate_rmses(self, test_traj_file, calc):
+        test_traj = read(test_traj_file, ":")
+
+        num_images = len(test_traj)
+        energy_rmse = 0.0
+        force_rmse = 0.0
+        for i in range(num_images):
+            energy_exact = test_traj[i].get_potential_energy()
+            force_exact = test_traj[i].get_forces().reshape(-1)
+
+            energy_amp = calc.get_potential_energy(test_traj[i])
+            force_amp = calc.get_forces(test_traj[i]).reshape(-1)
+
+            energy_rmse += np.sum((energy_exact - energy_amp) ** 2)
+            force_rmse += np.sum((force_exact - force_amp) ** 2)
+
+        return energy_rmse, force_rmse
