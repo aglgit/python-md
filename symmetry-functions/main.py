@@ -3,9 +3,14 @@ import sys
 sys.path.insert(0, "../tools")
 
 import os
+import numpy as np
+import pandas as pd
 from asap3 import EMT
 from amp import Amp
+from amp.utilities import TrainingConvergenceError
 from amp.descriptor.cutoffs import Polynomial
+from amp.descriptor.gaussian import make_symmetry_functions
+from analysis import Analyzer
 from build_atoms import AtomBuilder
 from create_traj import CreateTrajectory
 from train_amp import Trainer
@@ -13,14 +18,18 @@ from train_amp import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (2, 2, 2)
+    size = (1, 1, 1)
     temp = 300
 
     traj_dir = "trajs"
     if not os.path.exists(traj_dir):
         os.mkdir(traj_dir)
     train_traj = os.path.join(traj_dir, "training.traj")
-    n_train = int(4e5)
+    test_traj = os.path.join(traj_dir, "test.traj")
+    logfile = "log.txt"
+
+    n_train = int(5e2)
+    n_test = int(5e2)
     save_interval = 100
 
     if not os.path.exists(train_traj):
@@ -33,100 +42,94 @@ if __name__ == "__main__":
         print("Creating trajectory {}".format(train_traj))
         ctrj.integrate_atoms(atoms, train_traj, n_train, save_interval)
 
-    logfile = "loss.txt"
-    elements = ["Cu"]
-    Gs = []
-    G2 = make_symmetry_functions(
-        elements=elements,
-        type="G2",
-        etas=np.logspace(np.log10(0.01), np.log10(5.0), num=10),
-    )
-    for eta in [0.01, 0.05, 0.1]:
-        G4 = make_symmetry_functions(
-            elements=elements,
-            type="G4",
-            etas=[eta],
-            zetas=[1.0, 2.0, 4.0, 16.0],
-            gammas=[1.0, -1.0],
-        )
-        G5 = make_symmetry_functions(
-            elements=elements,
-            type="G5",
-            etas=[eta],
-            zetas=[1.0, 2.0, 4.0, 16.0],
-            gammas=[1.0, -1.0],
-        )
-        Gs.append(G2 + G4)
-        Gs.append(G2 + G5)
+    if not os.path.exists(test_traj):
+        atmb = AtomBuilder()
+        atoms = atmb.build_atoms(system, size, temp)
+        calc = EMT()
+        atoms.set_calculator(calc)
 
-    convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": int(1e3)}
+        ctrj = CreateTrajectory()
+        print("Creating trajectory {}".format(test_traj))
+        ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
+
+    # Defaults
+    convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": int(1e1)}
     energy_coefficient = 1.0
     force_coefficient = 0.1
     hidden_layers = (10, 10)
     activation = "tanh"
     cutoff = Polynomial(6.0)
 
-    if not os.path.exists(logfile):
-        log = open(logfile, "w")
-        string = """
-                 Convergence:        {}
-                 Energy coefficient: {}
-                 Force coefficient:  {}
-                 Hidden layers:      {}
-                 Activation:         {}
-                 Cutoff:             {}
-                 Gs:                 AMP defaults\n""".format(
-            convergence,
-            energy_coefficient,
-            force_coefficient,
-            hidden_layers,
-            activation,
-            cutoff,
+    elements = ["Cu"]
+    etas_radial = [6, 7, 8, 9, 10]
+    etas_angular = [2, 2, 3, 3, 3, 3]
+    zetas = [1.0, 2.0, 4.0, 16.0]
+    gammas = [1.0, -1.0]
+    Gs = [None]
+    for etar, etaa in zip(etas_radial, etas_angular):
+        G2 = make_symmetry_functions(
+            elements=elements,
+            type="G2",
+            etas=np.logspace(np.log10(0.01), np.log10(5.0), num=etar),
         )
-        log.write("Default parameters:\n")
-        log.write(string)
-        trn = Trainer(
-            convergence=convergence,
-            energy_coefficient=energy_coefficient,
-            force_coefficient=force_coefficient,
-            hidden_layers=hidden_layers,
-            activation=activation,
-            cutoff=cutoff,
-            Gs=None,
+        G4 = make_symmetry_functions(
+            elements=elements,
+            type="G4",
+            etas=np.logspace(np.log10(0.001), np.log10(0.1), num=etaa),
+            zetas=zetas,
+            gammas=gammas,
         )
-        amp_calc = trn.create_calc()
-        loss, energy_rmse, force_rmse = amp_calc.train_return_loss(train_traj)
-
-        string = "Parameter: {}, Value: {}, Loss: {:.3E}, Energy RMSE: {:.3E}, Force RMSE: {:.3E}\n".format(
-            parameter, value, loss, energy_rmse, force_rmse
+        G5 = make_symmetry_functions(
+            elements=elements,
+            type="G5",
+            etas=np.logspace(np.log10(0.001), np.log10(0.1), num=etaa),
+            zetas=zetas,
+            gammas=gammas,
         )
-        print(string, end="")
-        log.write(string)
 
-    else:
-        log = open(logfile, "a")
+        Gs.append(G2 + G4)
+        Gs.append(G2 + G5)
 
-    for G in Gs:
-        trn = Trainer(
-            convergence=convergence,
-            energy_coefficient=energy_coefficient,
-            force_coefficient=force_coefficient,
-            hidden_layers=hidden_layers,
-            activation=activation,
-            cutoff=cutoff,
-            Gs=G,
-        )
-        values = parameters[parameter]
-        log.write("\n")
-        for value in values:
-            setattr(trn, parameter, value)
-            amp_calc = trn.create_calc()
-            loss, energy_rmse, force_rmse = amp_calc.train_return_loss(train_traj)
+    anl = Analyzer(save_interval=save_interval)
 
-            string = "Parameter: {}, Value: {}, Loss: {:.3E}, Energy RMSE: {:.3E}, Force RMSE: {:.3E}\n".format(
-                parameter, value, loss, energy_rmse, force_rmse
+    results = {
+        "Num radial": [],
+        "Num angular": [],
+        "Angular type": [],
+        "Energy RMSE": [],
+        "Force RMSE": [],
+    }
+    for i in range(len(etas_radial)):
+        for j, Gtype in enumerate(["G4", "G5"]):
+            G = Gs[2 * i + j]
+            num_radial = etas_radial[i]
+            num_angular = etas_angular[i] * len(zetas) * len(gammas)
+
+            trn = Trainer(
+                convergence=convergence,
+                energy_coefficient=energy_coefficient,
+                force_coefficient=force_coefficient,
+                hidden_layers=hidden_layers,
+                activation=activation,
+                cutoff=cutoff,
+                Gs=G,
             )
-            print(string, end="")
-            log.write(string)
+            label = "Gs-{}-{}-{}".format(num_radial, num_angular, Gtype)
+            print(label)
+            amp_calc = trn.create_calc(label=label, dblabel=label)
 
-    log.close()
+            try:
+                amp_calc.train(train_traj)
+            except TrainingConvergenceError:
+                pass
+
+            energy_rmse, force_rmse = anl.calculate_rmses(test_traj, amp_calc)
+
+            results["Num radial"].append(num_radial)
+            results["Num angular"].append(num_angular)
+            results["Angular type"].append(Gtype)
+            results["Energy RMSE"].append(energy_rmse)
+            results["Force RMSE"].append(force_rmse)
+
+    df = pd.DataFrame.from_dict(results)
+    df.to_csv(logfile, sep=" ")
