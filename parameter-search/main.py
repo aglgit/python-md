@@ -17,7 +17,7 @@ from train_amp import Trainer
 if __name__ == "__main__":
     system = "copper"
     size = (2, 2, 2)
-    temp = 300
+    temp = 500
 
     traj_dir = "trajs"
     if not os.path.exists(traj_dir):
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     logfile = "log.txt"
 
     n_train = int(5e4)
-    n_test = int(7.5e3)
+    n_test = int(1e4)
     save_interval = 100
 
     if not os.path.exists(train_traj):
@@ -39,6 +39,7 @@ if __name__ == "__main__":
         ctrj = CreateTrajectory()
         print("Creating trajectory {}".format(train_traj))
         ctrj.integrate_atoms(atoms, train_traj, n_train, save_interval)
+        ctrj.convert_trajectory(train_traj)
 
     if not os.path.exists(test_traj):
         atmb = AtomBuilder()
@@ -49,9 +50,10 @@ if __name__ == "__main__":
         ctrj = CreateTrajectory()
         print("Creating trajectory {}".format(test_traj))
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
+        ctrj.convert_trajectory(test_traj)
 
     parameters = {}
-    parameters["force_coefficient"] = [1e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1]
+    parameters["force_coefficient"] = [1e-3, 1e-2, 5e-2, 1e-1, 2e-1, 5e-1]
     parameters["hidden_layers"] = [
         [10],
         [20],
@@ -59,8 +61,8 @@ if __name__ == "__main__":
         [40],
         [10, 10],
         [20, 10],
-        [30, 10],
         [20, 20],
+        [30, 10],
         [40, 40],
     ]
     parameters["activation"] = ["tanh", "sigmoid"]
@@ -112,5 +114,5 @@ if __name__ == "__main__":
                 results["Energy RMSE"].append(energy_rmse)
                 results["Force RMSE"].append(force_rmse)
 
-    df = pd.DataFrame.from_dict(results)
-    df.to_csv(logfile, sep=" ")
+                df = pd.DataFrame.from_dict(results)
+                df.to_csv(logfile, sep=" ")

@@ -16,8 +16,8 @@ from train_amp import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (2, 2, 2)
-    temp = 300
+    size = (3, 3, 3)
+    temp = 500
 
     traj_dir = "trajs"
     if not os.path.exists(traj_dir):
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     logfile = "log.txt"
 
     n_train = int(5e4)
-    n_test = int(7.5e2)
+    n_test = int(1e4)
     save_interval = 100
 
     if not os.path.exists(train_traj):
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         print("Creating trajectory {}".format(test_traj))
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
 
-    rcs = [3.0, 4.0, 5.0, 6.0, 7.0]
+    rcs = [4.0, 5.0, 6.0, 7.0, 8.0]
     cutoffs = []
     for rc in rcs:
         cutoffs.append(Cosine(rc))
@@ -93,5 +93,5 @@ if __name__ == "__main__":
         results["Energy RMSE"].append(energy_rmse)
         results["Force RMSE"].append(force_rmse)
 
-    df = pd.DataFrame.from_dict(results)
-    df.to_csv(logfile, sep=" ")
+        df = pd.DataFrame.from_dict(results)
+        df.to_csv(logfile, sep=" ")

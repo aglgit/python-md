@@ -11,7 +11,7 @@ class Trainer:
         convergence=None,
         energy_coefficient=1.0,
         force_coefficient=None,
-        hidden_layers=(10),
+        hidden_layers=(10, 10),
         activation="tanh",
         cutoff=6.0,
         Gs=None,

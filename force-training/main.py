@@ -17,9 +17,8 @@ from train_amp import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (2, 2, 2)
-    temp = 300
-    save_interval = 100
+    size = (3, 3, 3)
+    temp = 500
 
     traj_dir = "trajs"
     if not os.path.exists(traj_dir):
@@ -27,9 +26,11 @@ if __name__ == "__main__":
     train_traj = os.path.join(traj_dir, "training.traj")
     test_traj = os.path.join(traj_dir, "test.traj")
 
-    if not os.path.exists(train_traj):
-        n_train = int(4e5)
+    n_train = int(5e4)
+    n_test = int(1e4)
+    save_interval = 100
 
+    if not os.path.exists(train_traj):
         atmb = AtomBuilder()
         atoms = atmb.build_atoms(system, size, temp)
         calc = EMT()
@@ -38,10 +39,9 @@ if __name__ == "__main__":
         ctrj = CreateTrajectory()
         print("Creating trajectory {}".format(train_traj))
         ctrj.integrate_atoms(atoms, train_traj, n_train, save_interval)
+        ctrj.convert_trajectory(train_traj)
 
     if not os.path.exists(test_traj):
-        n_test = int(4e4)
-
         atmb = AtomBuilder()
         atoms = atmb.build_atoms(system, size, temp)
         calc = EMT()
@@ -50,6 +50,7 @@ if __name__ == "__main__":
         ctrj = CreateTrajectory()
         print("Creating trajectory {}".format(test_traj))
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
+        ctrj.convert_trajectory(test_traj)
 
     energy_coefficient = 1.0
     hidden_layers = (10, 10)
@@ -111,12 +112,14 @@ if __name__ == "__main__":
 
     energy_noforcetrain = os.path.join(plt_dir, "energy_noforcetrain.png")
     force_noforcetrain = os.path.join(plt_dir, "force_noforcetrain.png")
-    energy_exact, energy_diff, force_exact, force_diff = anl.calculate_amp_error(
+    energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = anl.calculate_amp_error(
         test_traj, amp_energy_calc
     )
     plt.plot_amp_error(
         energy_noforcetrain,
         force_noforcetrain,
+        energy_rmse,
+        force_rmse,
         energy_exact,
         energy_diff,
         force_exact,
@@ -125,12 +128,14 @@ if __name__ == "__main__":
 
     energy_forcetrain = os.path.join(plt_dir, "energy_forcetrain.png")
     force_forcetrain = os.path.join(plt_dir, "force_forcetrain.png")
-    energy_exact, energy_diff, force_exact, force_diff = anl.calculate_amp_error(
+    energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = anl.calculate_amp_error(
         test_traj, amp_force_calc
     )
     plt.plot_amp_error(
         energy_forcetrain,
         force_forcetrain,
+        energy_rmse,
+        force_rmse,
         energy_exact,
         energy_diff,
         force_exact,

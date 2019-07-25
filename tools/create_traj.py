@@ -1,6 +1,4 @@
 import os
-import glob
-import itertools
 from ase import units
 from ase.io import read, write, Trajectory
 from ase.md.verlet import VelocityVerlet
@@ -16,10 +14,6 @@ class CreateTrajectory:
             traj_file
         )
         traj = Trajectory(traj_file, "w")
-        energy = atoms.get_total_energy()
-        forces = atoms.get_forces()
-        traj.write(atoms)
-        print("Steps: {}, total energy: {}".format(self.steps, energy))
 
         dyn = VelocityVerlet(atoms, timestep=self.timestep * units.fs)
         count = n_steps // save_interval
@@ -41,11 +35,3 @@ class CreateTrajectory:
             print("Converting {} to {}".format(traj_file, xyz_file))
             traj = read(traj_file, ":")
             write(xyz_file, traj)
-
-    def concat_trajectories(self, traj_folder, filename):
-        traj_files = glob.glob(os.path.join(traj_folder, "*.traj"))
-        trajs = [read(traj, ":-1") for traj in traj_files]
-        traj = list(itertools.chain.from_iterable(trajs))
-        outfile = os.path.join(traj_folder, filename)
-        print("Concatenating trajectories in {}/ to {}".format(traj_folder, outfile))
-        write(outfile, traj)
