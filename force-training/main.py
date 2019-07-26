@@ -3,7 +3,6 @@ import sys
 sys.path.insert(0, "../tools")
 
 import os
-from ase.io import read
 from asap3 import EMT
 from amp import Amp
 from amp.analysis import calculate_error
