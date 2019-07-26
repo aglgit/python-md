@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from amp.analysis import read_trainlog
@@ -102,3 +103,72 @@ class Plotter:
         plt.ylabel("abs(Exact force - AMP force) [eV/Å]")
         plt.savefig(force_plot_file)
         plt.clf()
+
+    def plot_symmetry_functions(
+        self,
+        rad_plot_file,
+        ang_plot_file,
+        Gs,
+        r_cut=6.0,
+        rij=None,
+        rdf=None,
+        theta=None,
+        adf=None,
+    ):
+        plt.figure(1)
+        if rij is None:
+            rij = np.linspace(1e-3, r_cut, 1000)
+        if rdf is not None:
+            rdf[np.nonzero(rdf)] /= max(rdf)
+            plt.plot(rij, rdf)
+        plt.figure(2)
+        if theta is None:
+            theta = np.linspace(0, np.pi, 1000)
+        if adf is not None:
+            adf[np.nonzero(adf)] /= max(adf)
+            plt.plot(theta, adf)
+
+        for key, functions in Gs.items():
+            for symm_func in functions:
+                if symm_func["type"] == "G2":
+                    eta = symm_func["eta"]
+                    val = self.G2(eta, rij, r_cut)
+                    plt.figure(1)
+                    plt.plot(rij, val, label="eta={}".format(eta))
+                elif symm_func["type"] in ["G4", "G5"]:
+                    gamma = symm_func["gamma"]
+                    zeta = symm_func["zeta"]
+                    val = self.G4(gamma, zeta, theta)
+                    plt.figure(2)
+                    plt.plot(theta, val, label="gamma={}, zeta={}".format(gamma, zeta))
+
+        plt.figure(1)
+        plt.legend()
+        plt.figure(2)
+        plt.legend()
+        plt.show()
+
+    def cosine(self, rij, r_cut):
+        term = 0.5 * (1 + np.cos(np.pi * rij / r_cut))
+
+        return term
+
+    def polynomial(self, rij, r_cut, gamma=4.0):
+        term1 = 1 + gamma * (rij / r_cut) ** (gamma + 1)
+        term2 = (gamma + 1) * (rij / r_cut) ** gamma
+
+        return term1 + term2
+
+    def G2(self, eta, rij, r_cut, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cosine
+        term1 = np.exp(-eta * (rij / r_cut) ** 2)
+        term2 = self.cosine(rij, r_cut)
+
+        return term1 * term2
+
+    def G4(self, gamma, zeta, theta_ijk):
+        term1 = 2 ** (1 - zeta)
+        term2 = (1 + gamma * np.cos(theta_ijk)) ** zeta
+
+        return term1 * term2

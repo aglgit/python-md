@@ -55,6 +55,8 @@ if __name__ == "__main__":
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
         ctrj.convert_trajectory(test_traj)
 
+    exit(1)
+
     # Defaults
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     energy_coefficient = 1.0
@@ -71,9 +73,7 @@ if __name__ == "__main__":
     Gs = {"Default": None}
     for netar, netaa, nzeta in zip(num_etas_radial, num_etas_angular, num_zetas):
         G2 = make_symmetry_functions(
-            elements=elements,
-            type="G2",
-            etas=np.linspace(0.1, 8.0, num=netar),
+            elements=elements, type="G2", etas=np.linspace(0.1, 8.0, num=netar)
         )
         G4 = make_symmetry_functions(
             elements=elements,
