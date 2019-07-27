@@ -1,5 +1,6 @@
 import numpy as np
 from ase.io import read
+from ase.neighborlist import NeighborList
 from asap3.analysis import CoordinationNumbers
 from asap3.analysis.rdf import RadialDistributionFunction
 
@@ -8,20 +9,48 @@ class Analyzer:
     def __init__(self, save_interval=10):
         self.save_interval = save_interval
 
-    def calculate_rdf(self, traj_file, rmax=10.0, nbins=100):
+    def calculate_rdf(self, traj_file, r_max=10.0, nbins=100):
         traj = read(traj_file, ":")
 
-        x = (np.arange(nbins) + 0.5) * rmax / nbins
+        x = (np.arange(nbins) + 0.5) * r_max / nbins
         rdf_obj = None
         for atoms in traj:
             if rdf_obj is None:
-                rdf_obj = RadialDistributionFunction(atoms, rmax, nbins)
+                rdf_obj = RadialDistributionFunction(atoms, r_max, nbins)
             else:
                 rdf_obj.atoms = atoms
             rdf_obj.update()
         rdf = rdf_obj.get_rdf()
 
         return x, rdf
+
+    def calculate_adf(self, traj_file, r_cut, nbins=100):
+        traj = read(traj_file, ":")
+
+        theta_vals = np.linspace(0, 180, nbins)
+        angles = []
+        nl = NeighborList(cutoffs=[r_cut / 2.0] * len(traj[0]),
+                          self_interaction=False)
+        for i, atoms in enumerate(traj):
+            nl.update(atoms)
+            cell = atoms.cell
+            for j, atom in enumerate(atoms):
+                selfposition = atom.position
+                neighborindices, neighboroffsets = nl.get_neighbors(j)
+                neighborpositions = atoms.positions[neighborindices] + np.dot(neighboroffsets, cell)
+                for k, n1 in enumerate(neighborpositions):
+                    for l, n2 in enumerate(neighborpositions[k:]):
+                        rij = selfposition - n1
+                        rik = selfposition - n2
+                        cos_theta = np.dot(rij, rik) / (np.linalg.norm(rij) * np.linalg.norm(rik))
+                        theta = np.arccos(cos_theta)
+                        if not np.isnan(theta):
+                            angles.append(theta * 180 / np.pi)
+        
+        angles = np.array(angles)
+        adf, bin_edges = np.histogram(angles, bins=theta_vals, density=True)
+
+        return bin_edges, adf
 
     def calculate_coordination_number(self, traj_file, r_cut):
         traj = read(traj_file, ":")

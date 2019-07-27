@@ -17,11 +17,11 @@ from train_amp import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (3, 3, 3)
+    size = (1, 1, 1)
     temp = 500
 
-    n_train = int(8e4)
-    n_test = int(2e4)
+    n_train = int(8e2)
+    n_test = int(2e2)
     save_interval = 100
 
     energy_coefficient = 1.0
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     activation = "tanh"
     cutoff = Polynomial(6.0)
     Gs = None
-    max_steps = int(1e4)
+    max_steps = int(1e1)
 
     trn = Trainer(
         energy_coefficient=energy_coefficient,
@@ -52,7 +52,6 @@ if __name__ == "__main__":
     energy_label = os.path.join(calc_dir, "energy")
     force_calc = os.path.join(calc_dir, "force.amp")
     force_label = os.path.join(calc_dir, "force")
-    dblabel = "amp"
 
     plot_dir = "plots"
     if not os.path.exists(plot_dir):
@@ -84,6 +83,7 @@ if __name__ == "__main__":
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
         ctrj.convert_trajectory(test_traj)
 
+    dblabel = "amp-train"
     if not os.path.exists(energy_calc):
         energy_convergence = {
             "energy_rmse": 1e-16,
@@ -117,6 +117,7 @@ if __name__ == "__main__":
         except TrainingConvergenceError:
             amp_force_calc.save(force_calc, overwrite=True)
 
+    dblabel = "amp-test"
     if not os.path.exists(energy_noforcetrain):
         plter = Plotter()
 

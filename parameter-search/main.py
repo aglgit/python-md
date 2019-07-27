@@ -3,6 +3,7 @@ import sys
 sys.path.insert(0, "../tools")
 
 import os
+import numpy as np
 import pandas as pd
 from asap3 import EMT
 from amp import Amp
@@ -44,7 +45,6 @@ if __name__ == "__main__":
         [40],
         [10, 10],
         [20, 10],
-        [20, 20],
         [30, 10],
         [40, 40],
     ]
@@ -61,7 +61,6 @@ if __name__ == "__main__":
     calc_dir = "calcs"
     if not os.path.exists(calc_dir):
         os.mkdir(calc_dir)
-    dblabel = "amp"
 
     if not os.path.exists(train_traj):
         atmb = AtomBuilder()
@@ -85,7 +84,8 @@ if __name__ == "__main__":
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
         ctrj.convert_trajectory(test_traj)
 
-    calcs = []
+    dblabel = "amp-train"
+    calcs = {}
     for ac in parameters["activation"]:
         for hl in parameters["hidden_layers"]:
             for fc in parameters["force_coefficient"]:
@@ -99,29 +99,40 @@ if __name__ == "__main__":
                     Gs=Gs,
                 )
                 label = "{}-{}-{}".format(ac, hl, fc)
-                label = os.path.join(calc_dir, label)
-                amp_name = "{}.amp".format(label)
+                amp_label = os.path.join(calc_dir, label)
+                amp_name = amp_label + ".amp"
                 if not os.path.exists(amp_name):
-                    print(label)
-                    amp_calc = trn.create_calc(label=label, dblabel=dblabel)
+                    print("Training {}".format(amp_name))
+                    amp_calc = trn.create_calc(label=amp_label, dblabel=dblabel)
                     try:
                         amp_calc.train(train_traj)
                     except TrainingConvergenceError:
                         amp_calc.save(amp_name, overwrite=True)
-                calcs.append(amp_name)
+                calcs[label] = amp_name
 
     if not os.path.exists(logfile):
-        columns = ["Activation", "Hidden layers", "Force coefficient", "Energy RMSE", "Force RMSE"]
+        columns = [
+            "Activation",
+            "Hidden layers",
+            "Force coefficient",
+            "Energy RMSE",
+            "Force RMSE",
+        ]
         df = pd.DataFrame(columns=columns)
-    else:
-        df = pd.read_csv(logfile)
 
-    for i, calc in enumerate(calcs):
-        print(calc)
-        ac, hl, fc = calc.split("/")[-1].split(".amp")[0].split("-")
-        print(ac, hl, fc)
-        data = calculate_rmses(calc, test_traj, dblabel=dblabel)
+        dblabel = "amp-test"
+        for i, (label, amp_name) in enumerate(calcs.items()):
+            print("Testing {}".format(amp_name))
+            energy_rmse, force_rmse = calculate_rmses(
+                amp_name, test_traj, dblabel=dblabel
+            )
 
-        row = [ac, hl, fc, data["energy_rmse"], data["force_rmse"]]
-        df.loc[i] = row
-        df.to_csv(logfile, sep=" ")
+            ac, hl, fc = label.split("-")
+            row = [ac, hl, fc, energy_rmse, force_rmse]
+            df.loc[i] = row
+            df.to_csv(logfile, index=False)
+
+    df = pd.read_csv(
+        logfile, dtype={"Energy RMSE": np.float64, "Force RMSE": np.float64}
+    )
+    print(df.to_latex(float_format="{:.2E}".format, index=False))

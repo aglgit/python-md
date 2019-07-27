@@ -28,8 +28,8 @@ if __name__ == "__main__":
     test_traj = os.path.join(traj_dir, "test.traj")
     logfile = "log.txt"
 
-    n_train = int(5e4)
-    n_test = int(1e4)
+    n_train = int(8e3)
+    n_test = int(2e2)
     save_interval = 100
     max_steps = int(1e3)
 
