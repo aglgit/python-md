@@ -110,6 +110,7 @@ if __name__ == "__main__":
                         amp_calc.save(amp_name, overwrite=True)
                 calcs[label] = amp_name
 
+    dblabel = "amp-test"
     if not os.path.exists(logfile):
         columns = [
             "Activation",
@@ -120,7 +121,6 @@ if __name__ == "__main__":
         ]
         df = pd.DataFrame(columns=columns)
 
-        dblabel = "amp-test"
         for i, (label, amp_name) in enumerate(calcs.items()):
             print("Testing {}".format(amp_name))
             energy_rmse, force_rmse = calculate_rmses(

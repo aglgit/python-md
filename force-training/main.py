@@ -94,8 +94,8 @@ if __name__ == "__main__":
         trn.convergence = energy_convergence
         trn.force_coefficient = force_coefficient
         amp_energy_calc = trn.create_calc(label=energy_label, dblabel=dblabel)
-        print("Training from trajectory {}!".format(train_traj))
 
+        print("Training from trajectory {}!".format(train_traj))
         try:
             amp_energy_calc.train(train_traj)
         except TrainingConvergenceError:
@@ -111,6 +111,7 @@ if __name__ == "__main__":
         trn.convergence = force_convergence
         trn.force_coefficient = force_coefficient
         amp_force_calc = trn.create_calc(label=force_label, dblabel=dblabel)
+
         print("Training from trajectory {}!".format(train_traj))
         try:
             amp_force_calc.train(train_traj)

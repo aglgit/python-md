@@ -6,9 +6,6 @@ from asap3.analysis.rdf import RadialDistributionFunction
 
 
 class Analyzer:
-    def __init__(self, save_interval=10):
-        self.save_interval = save_interval
-
     def calculate_rdf(self, traj_file, r_max=10.0, nbins=100):
         traj = read(traj_file, ":")
 
@@ -23,40 +20,6 @@ class Analyzer:
         rdf = rdf_obj.get_rdf()
 
         return x, rdf
-
-    def calculate_adf(self, traj_file, r_cut, nbins=100):
-        traj = read(traj_file, ":")
-
-        theta_vals = np.linspace(0, 180, nbins)
-        num_images = len(traj)
-        num_atoms = len(traj[0])
-        angles = np.zeros((num_images, num_atoms, 4*num_atoms, 4*num_atoms))
-        nl = NeighborList(cutoffs=[r_cut / 2.0] * num_atoms,
-                          self_interaction=False)
-        for i, atoms in enumerate(traj):
-            nl.update(atoms)
-            cell = atoms.cell
-            for j, atom in enumerate(atoms):
-                selfposition = atom.position
-                neighborindices, neighboroffsets = nl.get_neighbors(j)
-                neighborpositions = atoms.positions[neighborindices] + np.dot(neighboroffsets, cell)
-                dist = neighborpositions - selfposition
-                norm = np.linalg.norm(dist, axis=1)
-                for k, n1 in enumerate(neighborpositions):
-                    rij = dist[k]
-                    for l, n2 in enumerate(neighborpositions[k+1:]):
-                        rik = dist[l]
-                        cos_theta = np.dot(rij, rik) / (norm[k] * norm[l])
-                        theta = np.arccos(cos_theta)
-                        angles[i][j][k][l] = theta
-        
-        angles = angles.reshape(-1)
-        angles = angles[~np.isnan(angles)]
-        angles = angles[np.nonzero(angles)]
-        angles *= 180 / np.pi
-        adf, bin_edges = np.histogram(angles, bins=theta_vals, density=True)
-
-        return bin_edges, adf
 
     def calculate_coordination_number(self, traj_file, r_cut):
         traj = read(traj_file, ":")
@@ -75,7 +38,7 @@ class Analyzer:
 
         return coord_min, coord_max, coord_avg
 
-    def calculate_msd(self, traj_file):
+    def calculate_msd(self, traj_file, save_interval=100):
         traj = read(traj_file, ":")
 
         steps = np.arange(len(traj)) * self.save_interval
@@ -88,7 +51,7 @@ class Analyzer:
 
         return steps, msd
 
-    def calculate_energy_diff(self, test_traj_file, amp_traj_file):
+    def calculate_energy_diff(self, test_traj_file, amp_traj_file, save_interval=100):
         test_traj = read(test_traj_file, ":")
         amp_traj = read(amp_traj_file, ":")
 
@@ -102,7 +65,9 @@ class Analyzer:
 
         return steps, energy_exact, energy_amp
 
-    def calculate_pot_energy_diff(self, test_traj_file, amp_traj_file):
+    def calculate_pot_energy_diff(
+        self, test_traj_file, amp_traj_file, save_interval=100
+    ):
         test_traj = read(test_traj_file, ":")
         amp_traj = read(amp_traj_file, ":")
 

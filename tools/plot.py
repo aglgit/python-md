@@ -8,7 +8,7 @@ class Plotter:
     def __init__(self):
         sns.set()
 
-    def plot_rmse(self, log_file, plot_file):
+    def plot_trainlog(self, log_file, plot_file):
         log = read_trainlog(log_file)
         convergence = log["convergence"]
 
@@ -109,12 +109,26 @@ class Plotter:
         rad_plot_file,
         ang_plot_file,
         Gs,
-        r_cut=6.0,
+        cutoff=None,
         rij=None,
         rdf=None,
         theta=None,
         adf=None,
     ):
+        if cutoff is None:
+            cut = self.cosine
+            r_cut = 6.0
+        else:
+            if cutoff.__class__.__name__ == "Cosine":
+                cut = self.cosine
+                r_cut = cutoff.Rc
+            elif cutoff.__class__.__name__ == "Polynomial":
+                cut = self.polynomial
+                r_cut = cutoff.Rc
+            else:
+                print("Cutoff {} not recognized".format(cutoff))
+                raise NotImplementedError
+
         plt.figure(1)
         if rij is None:
             rij = np.linspace(1e-3, r_cut, 1000)
@@ -128,19 +142,24 @@ class Plotter:
             adf[np.nonzero(adf)] /= max(adf)
             plt.plot(theta, adf)
 
-        for key, functions in Gs.items():
-            for symm_func in functions:
-                if symm_func["type"] == "G2":
-                    eta = symm_func["eta"]
-                    val = self.G2(eta, rij, r_cut)
-                    plt.figure(1)
-                    plt.plot(rij, val, label="eta={}".format(eta))
-                elif symm_func["type"] in ["G4", "G5"]:
-                    gamma = symm_func["gamma"]
-                    zeta = symm_func["zeta"]
-                    val = self.G4(gamma, zeta, theta)
-                    plt.figure(2)
-                    plt.plot(theta, val, label="gamma={}, zeta={}".format(gamma, zeta))
+        for symm_func in Gs:
+            if symm_func["type"] == "G2":
+                eta = symm_func["eta"]
+                center = symm_func["center"]
+                val = self.G2(eta, center, rij, cut, r_cut)
+                plt.figure(1)
+                plt.plot(rij, val, label="eta={}, center={}".format(eta, center))
+            elif symm_func["type"] in ["G4", "G5"]:
+                eta = symm_func["eta"]
+                gamma = symm_func["gamma"]
+                zeta = symm_func["zeta"]
+                val = self.G4(eta, gamma, zeta, theta)
+                plt.figure(2)
+                plt.plot(
+                    theta,
+                    val,
+                    label="eta={}, gamma={}, zeta={}".format(eta, gamma, zeta),
+                )
 
         plt.figure(1)
         plt.legend()
@@ -159,16 +178,15 @@ class Plotter:
 
         return term1 + term2
 
-    def G2(self, eta, rij, r_cut, cutoff=None):
-        if cutoff is None:
-            cutoff = self.cosine
+    def G2(self, eta, center, rij, cutoff, r_cut):
         term1 = np.exp(-eta * (rij / r_cut) ** 2)
-        term2 = self.cosine(rij, r_cut)
+        term2 = cutoff(rij, r_cut)
 
         return term1 * term2
 
-    def G4(self, gamma, zeta, theta_ijk):
+    def G4(self, eta, gamma, zeta, theta_ijk):
         term1 = 2 ** (1 - zeta)
         term2 = (1 + gamma * np.cos(theta_ijk)) ** zeta
+        term3 = np.exp(-eta)
 
-        return term1 * term2
+        return term1 * term2 * term3

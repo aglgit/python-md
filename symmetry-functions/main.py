@@ -7,31 +7,46 @@ import numpy as np
 import pandas as pd
 from asap3 import EMT
 from amp import Amp
+from amp.analysis import calculate_rmses
 from amp.utilities import TrainingConvergenceError
 from amp.descriptor.cutoffs import Polynomial
 from amp.descriptor.gaussian import make_symmetry_functions
 from analysis import Analyzer
 from build_atoms import AtomBuilder
 from create_traj import CreateTrajectory
+from plot import Plotter
 from train_amp import Trainer
 
 
 if __name__ == "__main__":
     system = "copper"
-    size = (3, 3, 3)
+    size = (1, 1, 1)
     temp = 500
+
+    n_train = int(8e2)
+    n_test = int(2e2)
+    save_interval = 100
+
+    max_steps = int(1e1)
+    convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
+    energy_coefficient = 1.0
+    force_coefficient = 0.1
+    hidden_layers = (10, 10)
+    activation = "tanh"
+    cutoff = Polynomial(6.0)
+    Gs = None
+
+    logfile = "log.txt"
 
     traj_dir = "trajs"
     if not os.path.exists(traj_dir):
         os.mkdir(traj_dir)
     train_traj = os.path.join(traj_dir, "training.traj")
     test_traj = os.path.join(traj_dir, "test.traj")
-    logfile = "log.txt"
 
-    n_train = int(8e3)
-    n_test = int(2e2)
-    save_interval = 100
-    max_steps = int(1e3)
+    calc_dir = "calcs"
+    if not os.path.exists(calc_dir):
+        os.mkdir(calc_dir)
 
     if not os.path.exists(train_traj):
         atmb = AtomBuilder()
@@ -55,56 +70,54 @@ if __name__ == "__main__":
         ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
         ctrj.convert_trajectory(test_traj)
 
-    exit(1)
-
-    # Defaults
-    convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
-    energy_coefficient = 1.0
-    force_coefficient = 0.1
-    hidden_layers = (10, 10)
-    activation = "tanh"
-    cutoff = Polynomial(6.0)
-
     elements = ["Cu"]
-    num_etas_radial = [4, 6, 7, 8, 9, 10]
-    num_etas_angular = [1, 2, 2, 3, 3, 3]
-    num_zetas = [2, 2, 2, 3, 3, 4]
+    num_radial = [5, 6, 7, 8, 9, 10]
+    num_zetas = [1, 1, 1, 1, 2, 3]
     gammas = [1.0, -1.0]
-    Gs = {"Default": None}
-    for netar, netaa, nzeta in zip(num_etas_radial, num_etas_angular, num_zetas):
-        G2 = make_symmetry_functions(
-            elements=elements, type="G2", etas=np.linspace(0.1, 8.0, num=netar)
-        )
-        G4 = make_symmetry_functions(
-            elements=elements,
-            type="G4",
-            etas=np.linspace(0.01, 1.0, num=netaa),
-            zetas=[2 ** i for i in range(nzeta)],
-            gammas=gammas,
-        )
-        G5 = make_symmetry_functions(
-            elements=elements,
-            type="G5",
-            etas=np.linspace(0.01, 1.0, num=netaa),
-            zetas=[2 ** i for i in range(nzeta)],
-            gammas=gammas,
-        )
+    symm_funcs = {}
+    for i in range(len(num_radial)):
+        for shift in ["uncentered", "centered"]:
+            nr = num_radial[i]
+            nz = num_zetas[i]
 
-        num_radial = netar
-        num_angular = netaa * nzeta * len(gammas)
-        key_G4 = "Gs-{}-{}-{}".format(num_radial, num_angular, "G4")
-        key_G5 = "Gs-{}-{}-{}".format(num_radial, num_angular, "G5")
+            if shift == "uncentered":
+                radial_grid = np.linspace(1.0, cutoff.Rc - 0.5, nr)
+                etas = 1.0 / ((2 * radial_grid) ** 2)
+                centers = np.zeros(len(etas))
+            elif shift == "centered":
+                radial_grid = np.linspace(0.5, cutoff.Rc - 0.5, nr)
+                delta_r = (radial_grid[-1] - radial_grid[0]) / (nr - 1)
+                etas = 1.0 / ((2 * delta_r) ** 2) * np.ones(nr)
+                centers = radial_grid
 
-        Gs[key_G4] = G2 + G4
-        Gs[key_G5] = G2 + G5
+            G2 = make_symmetry_functions(
+                elements=elements, type="G2", etas=etas, centers=centers
+            )
 
-    anl = Analyzer(save_interval=save_interval)
+            G4 = make_symmetry_functions(
+                elements=elements,
+                type="G4",
+                etas=etas,
+                zetas=[2 ** i for i in range(nz)],
+                gammas=[1.0, -1.0],
+            )
 
-    results = {"Key": [], "Energy RMSE": [], "Force RMSE": []}
+            G5 = make_symmetry_functions(
+                elements=elements,
+                type="G5",
+                etas=etas,
+                zetas=[2 ** i for i in range(nz)],
+                gammas=[1.0, -1.0],
+            )
 
-    for key in Gs:
-        print(key)
-        G = Gs[key]
+            label_G4 = "Gs-{}-{}-{}-{}".format(nr, nz, "G4", shift)
+            label_G5 = "Gs-{}-{}-{}-{}".format(nr, nz, "G5", shift)
+
+            symm_funcs[label_G4] = G2 + G4
+            symm_funcs[label_G5] = G2 + G5
+
+    calcs = {}
+    for i, (label, symm_func) in enumerate(symm_funcs.items()):
         trn = Trainer(
             convergence=convergence,
             energy_coefficient=energy_coefficient,
@@ -112,20 +125,37 @@ if __name__ == "__main__":
             hidden_layers=hidden_layers,
             activation=activation,
             cutoff=cutoff,
-            Gs=G,
+            Gs=symm_func,
         )
-        amp_calc = trn.create_calc(label=key, dblabel=key)
+        amp_label = os.path.join(calc_dir, label)
+        amp_dblabel = amp_label + "-train"
+        amp_name = amp_label + ".amp"
+        if not os.path.exists(amp_name):
+            print("Training {}".format(label))
+            amp_calc = trn.create_calc(label=amp_label, dblabel=amp_dblabel)
+            try:
+                amp_calc.train(train_traj)
+            except TrainingConvergenceError:
+                amp_calc.save(amp_name, overwrite=True)
 
-        try:
-            amp_calc.train(train_traj)
-        except TrainingConvergenceError:
-            pass
+        calcs[label] = amp_name
 
-        energy_rmse, force_rmse = anl.calculate_rmses(test_traj, amp_calc)
+    if not os.path.exists(logfile):
+        columns = ["Symmetry functions", "Energy RMSE", "Force RMSE"]
+        df = pd.DataFrame(columns=columns)
 
-        results["Key"].append(key)
-        results["Energy RMSE"].append(energy_rmse)
-        results["Force RMSE"].append(force_rmse)
+        for i, (label, amp_name) in enumerate(calcs.items()):
+            print("Testing {}".format(amp_name))
+            amp_dblabel = os.path.join(calc_dir, label) + "-test"
+            energy_rmse, force_rmse = calculate_rmses(
+                amp_name, test_traj, dblabel=amp_dblabel
+            )
 
-        df = pd.DataFrame.from_dict(results)
-        df.to_csv(logfile, sep=" ")
+            row = [label, energy_rmse, force_rmse]
+            df.loc[i] = row
+            df.to_csv(logfile, index=False)
+
+    df = pd.read_csv(
+        logfile, dtype={"Energy RMSE": np.float64, "Force RMSE": np.float64}
+    )
+    print(df.to_latex(float_format="{:.2E}".format, index=False))

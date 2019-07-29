@@ -104,9 +104,9 @@ if __name__ == "__main__":
 
         for i, (label, amp_name) in enumerate(calcs.items()):
             print("Testing {}".format(amp_name))
-            dblabel = os.path.join(calc_dir, label) + "-test"
+            amp_dblabel = os.path.join(calc_dir, label) + "-test"
             energy_rmse, force_rmse = calculate_rmses(
-                amp_name, test_traj, dblabel=dblabel
+                amp_name, test_traj, dblabel=amp_dblabel
             )
 
             row = [label, energy_rmse, force_rmse]
