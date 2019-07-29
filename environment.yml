@@ -7,8 +7,10 @@ dependencies:
   - scipy
   - matplotlib
   - jupyter
+  - pandas
   - pip
   - pip:
     - ase
     - asap3
+    - amp-atomistics
     - tensorflow==2.0.0-beta1

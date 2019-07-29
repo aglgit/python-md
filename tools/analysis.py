@@ -28,8 +28,10 @@ class Analyzer:
         traj = read(traj_file, ":")
 
         theta_vals = np.linspace(0, 180, nbins)
-        angles = []
-        nl = NeighborList(cutoffs=[r_cut / 2.0] * len(traj[0]),
+        num_images = len(traj)
+        num_atoms = len(traj[0])
+        angles = np.zeros((num_images, num_atoms, 4*num_atoms, 4*num_atoms))
+        nl = NeighborList(cutoffs=[r_cut / 2.0] * num_atoms,
                           self_interaction=False)
         for i, atoms in enumerate(traj):
             nl.update(atoms)
@@ -38,16 +40,20 @@ class Analyzer:
                 selfposition = atom.position
                 neighborindices, neighboroffsets = nl.get_neighbors(j)
                 neighborpositions = atoms.positions[neighborindices] + np.dot(neighboroffsets, cell)
+                dist = neighborpositions - selfposition
+                norm = np.linalg.norm(dist, axis=1)
                 for k, n1 in enumerate(neighborpositions):
-                    for l, n2 in enumerate(neighborpositions[k:]):
-                        rij = selfposition - n1
-                        rik = selfposition - n2
-                        cos_theta = np.dot(rij, rik) / (np.linalg.norm(rij) * np.linalg.norm(rik))
+                    rij = dist[k]
+                    for l, n2 in enumerate(neighborpositions[k+1:]):
+                        rik = dist[l]
+                        cos_theta = np.dot(rij, rik) / (norm[k] * norm[l])
                         theta = np.arccos(cos_theta)
-                        if not np.isnan(theta):
-                            angles.append(theta * 180 / np.pi)
+                        angles[i][j][k][l] = theta
         
-        angles = np.array(angles)
+        angles = angles.reshape(-1)
+        angles = angles[~np.isnan(angles)]
+        angles = angles[np.nonzero(angles)]
+        angles *= 180 / np.pi
         adf, bin_edges = np.histogram(angles, bins=theta_vals, density=True)
 
         return bin_edges, adf

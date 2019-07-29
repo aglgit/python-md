@@ -6,6 +6,6 @@ import matplotlib.pyplot as plt
 from analysis import Analyzer
 
 anl = Analyzer(save_interval=100)
-theta, adf = anl.calculate_adf("trajs/training.traj", r_cut=6.0, nbins=100)
+theta, adf = anl.calculate_adf("trajs/training.traj", r_cut=6.0, nbins=50)
 plt.plot(theta[:-1], adf)
 plt.show()

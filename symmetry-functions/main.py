@@ -18,7 +18,7 @@ from train_amp import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (2, 2, 2)
+    size = (3, 3, 3)
     temp = 500
 
     traj_dir = "trajs"
