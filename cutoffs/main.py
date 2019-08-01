@@ -18,14 +18,14 @@ from train_amp import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (1, 1, 1)
+    size = (3, 3, 3)
     temp = 500
 
-    n_train = int(8e2)
-    n_test = int(2e2)
+    n_train = int(2e4)
+    n_test = int(7.5e3)
     save_interval = 100
 
-    max_steps = int(1e1)
+    max_steps = int(2e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     energy_coefficient = 1.0
     force_coefficient = 0.1
