@@ -5,7 +5,7 @@ sys.path.insert(0, "../tools")
 import os
 import numpy as np
 import pandas as pd
-from ase.calculators.lj import LennardJones
+from asap3 import OpenKIMcalculator
 from amp import Amp
 from amp.analysis import calculate_rmses
 from amp.utilities import TrainingConvergenceError
@@ -19,7 +19,7 @@ from train_amp import Trainer
 
 
 if __name__ == "__main__":
-    system = "argon"
+    system = "silicon"
     size = (4, 4, 4)
     temp = 500
     epsilon = 1.0318e-2
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     n_test = int(2e4)
     save_interval = 100
 
-    max_steps = int(1e4)
+    max_steps = int(5e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     energy_coefficient = 1.0
     force_coefficient = 0.1
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     if not os.path.exists(train_traj):
         atmb = AtomBuilder()
         atoms = atmb.build_atoms(system, size, temp)
-        calc = LennardJones(epsilon=epsilon, sigma=sigma)
+        calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
         atoms.set_calculator(calc)
 
         ctrj = CreateTrajectory()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     if not os.path.exists(test_traj):
         atmb = AtomBuilder()
         atoms = atmb.build_atoms(system, size, temp)
-        calc = LennardJones(epsilon=epsilon, sigma=sigma)
+        calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
         atoms.set_calculator(calc)
 
         ctrj = CreateTrajectory()

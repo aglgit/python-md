@@ -13,6 +13,7 @@ from amp.descriptor.cutoffs import Cosine, Polynomial
 from analysis import Analyzer
 from build_atoms import AtomBuilder
 from create_traj import CreateTrajectory
+from plot import Plotter
 from train_amp import Trainer
 
 
@@ -34,6 +35,7 @@ if __name__ == "__main__":
     Gs = None
 
     logfile = "log.txt"
+    rdf_plotfile = "copper_rdf.png"
 
     traj_dir = "trajs"
     if not os.path.exists(traj_dir):
@@ -117,3 +119,9 @@ if __name__ == "__main__":
         logfile, dtype={"Energy RMSE": np.float64, "Force RMSE": np.float64}
     )
     print(df.to_latex(float_format="{:.2E}".format, index=False))
+
+    if not os.path.exists(rdf_plotfile):
+        anl = Analyzer()
+        plter = Plotter()
+        r, rdf = anl.calculate_rdf(train_traj)
+        plter.plot_rdf(rdf_plotfile, [], r, rdf)
