@@ -1,5 +1,4 @@
 import os
-import numpy as np
 from ase import units
 from ase.io import read, write, Trajectory
 from ase.md.verlet import VelocityVerlet
