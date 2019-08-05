@@ -1,3 +1,4 @@
+import numpy as np
 from ase.lattice.cubic import FaceCenteredCubic, Diamond
 from ase import units
 from ase.md.velocitydistribution import (
@@ -15,10 +16,12 @@ class AtomBuilder:
             "silicon": self.silicon_system,
         }
 
-    def build_atoms(self, system, size, temp):
+    def build_atoms(self, system, size, temp, seed=None):
         assert system in self.systems.keys(), "System {} not found!".format(system)
         atoms = self.systems[system](size)
-        MaxwellBoltzmannDistribution(atoms, temp * units.kB)
+        if seed is not None:
+            np.random.seed(seed)
+        MaxwellBoltzmannDistribution(atoms, temp * units.kB, rng=np.random)
         Stationary(atoms)
         ZeroRotation(atoms)
 

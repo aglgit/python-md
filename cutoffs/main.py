@@ -1,73 +1,54 @@
 import sys
 
-sys.path.insert(0, "../tools")
+sys.path.insert(1, "../tools")
 
-import os
 import numpy as np
 import pandas as pd
 from asap3 import EMT
-from amp import Amp
 from amp.analysis import calculate_rmses
-from amp.utilities import TrainingConvergenceError
 from amp.descriptor.cutoffs import Cosine, Polynomial
-from analysis import Analyzer
-from build_atoms import AtomBuilder
-from create_traj import CreateTrajectory
-from plot import Plotter
-from train_amp import Trainer
+from create_trajectory import TrajectoryBuilder
+from trainer import Trainer
 
 
 if __name__ == "__main__":
     system = "copper"
-    size = (3, 3, 3)
+    size = (1, 1, 1)
     temp = 500
+    seed = 0
 
-    n_train = int(2e4)
-    n_test = int(7.5e3)
+    n_train = int(8e2)
+    n_test = int(2e2)
     save_interval = 100
 
-    max_steps = int(2e3)
+    trjbd = TrajectoryBuilder()
+    calc = EMT()
+    train_atoms = trjbd.build_atoms(system, size, temp, calc)
+    calc = EMT()
+    test_atoms = trjbd.build_atoms(system, size, temp, calc)
+
+    train_traj = "training.traj"
+    test_traj = "test.traj"
+    train_steps, train_traj = trjbd.integrate_atoms(
+        train_atoms, train_traj, n_train, save_interval, convert=True
+    )
+    test_steps, test_traj = trjbd.integrate_atoms(
+        test_atoms, test_traj, n_test, save_interval, convert=True
+    )
+
+    max_steps = int(2e1)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
-    energy_coefficient = 1.0
     force_coefficient = 0.1
     hidden_layers = (10, 10)
     activation = "tanh"
     Gs = None
-
-    logfile = "log.txt"
-    rdf_plotfile = "copper_rdf.png"
-
-    traj_dir = "trajs"
-    if not os.path.exists(traj_dir):
-        os.mkdir(traj_dir)
-    train_traj = os.path.join(traj_dir, "training.traj")
-    test_traj = os.path.join(traj_dir, "test.traj")
-
-    calc_dir = "calcs"
-    if not os.path.exists(calc_dir):
-        os.mkdir(calc_dir)
-
-    if not os.path.exists(train_traj):
-        atmb = AtomBuilder()
-        atoms = atmb.build_atoms(system, size, temp)
-        calc = EMT()
-        atoms.set_calculator(calc)
-
-        ctrj = CreateTrajectory()
-        print("Creating trajectory {}".format(train_traj))
-        ctrj.integrate_atoms(atoms, train_traj, n_train, save_interval)
-        ctrj.convert_trajectory(train_traj)
-
-    if not os.path.exists(test_traj):
-        atmb = AtomBuilder()
-        atoms = atmb.build_atoms(system, size, temp)
-        calc = EMT()
-        atoms.set_calculator(calc)
-
-        ctrj = CreateTrajectory()
-        print("Creating trajectory {}".format(test_traj))
-        ctrj.integrate_atoms(atoms, test_traj, n_test, save_interval)
-        ctrj.convert_trajectory(test_traj)
+    trn = Trainer(
+        convergence=convergence,
+        force_coefficient=force_coefficient,
+        hidden_layers=hidden_layers,
+        activation=activation,
+        Gs=Gs,
+    )
 
     Rcs = [4.0, 5.0, 6.0, 7.0, 8.0]
     cutoffs = []
@@ -77,38 +58,24 @@ if __name__ == "__main__":
 
     calcs = {}
     for cutoff in cutoffs:
-        trn = Trainer(
-            convergence=convergence,
-            energy_coefficient=energy_coefficient,
-            force_coefficient=force_coefficient,
-            hidden_layers=hidden_layers,
-            activation=activation,
-            cutoff=cutoff,
-            Gs=Gs,
-        )
+        trn.cutoff = cutoff
         label = "{}-{}".format(cutoff.__class__.__name__, cutoff.Rc)
-        amp_label = os.path.join(calc_dir, label)
-        amp_dblabel = amp_label + "-train"
-        amp_name = amp_label + ".amp"
-        if not os.path.exists(amp_name):
-            print("Training {}".format(amp_name))
-            amp_calc = trn.create_calc(label=amp_label, dblabel=amp_dblabel)
-            try:
-                amp_calc.train(train_traj)
-            except TrainingConvergenceError:
-                amp_calc.save(amp_name, overwrite=True)
+        dblabel = "train-" + label
+        calc = trn.create_calc(label=label, dblabel=dblabel)
+        amp_name = trn.train_calc(calc, train_traj)
 
         calcs[label] = amp_name
 
+    logfile = "log.txt"
     if not os.path.exists(logfile):
         columns = ["Cutoff", "Energy RMSE", "Force RMSE"]
         df = pd.DataFrame(columns=columns)
 
         for i, (label, amp_name) in enumerate(calcs.items()):
-            print("Testing {}".format(amp_name))
-            amp_dblabel = os.path.join(calc_dir, label) + "-test"
+            print("Testing calculator {} on trajectory {}".format(amp_name, test_traj))
+            dblabel = "test-" + label
             energy_rmse, force_rmse = calculate_rmses(
-                amp_name, test_traj, dblabel=amp_dblabel
+                amp_name, test_traj, dblabel=dblabel
             )
 
             row = [label, energy_rmse, force_rmse]
@@ -119,9 +86,3 @@ if __name__ == "__main__":
         logfile, dtype={"Energy RMSE": np.float64, "Force RMSE": np.float64}
     )
     print(df.to_latex(float_format="{:.2E}".format, index=False))
-
-    if not os.path.exists(rdf_plotfile):
-        anl = Analyzer()
-        plter = Plotter()
-        r, rdf = anl.calculate_rdf(train_traj)
-        plter.plot_rdf(rdf_plotfile, [], r, rdf)
