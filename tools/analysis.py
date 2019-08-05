@@ -1,6 +1,5 @@
 import numpy as np
-from ase.io import read
-from ase.neighborlist import NeighborList
+from ase.io import read, write
 from asap3.analysis import CoordinationNumbers
 from asap3.analysis.rdf import RadialDistributionFunction
 

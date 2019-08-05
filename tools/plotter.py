@@ -179,7 +179,7 @@ class Plotter:
         return term1 + term2
 
     def G2(self, eta, center, rij, cutoff, r_cut):
-        term1 = np.exp(-eta * (rij / r_cut) ** 2)
+        term1 = np.exp(-eta * (rij - center) ** 2 / r_cut ** 2)
         term2 = cutoff(rij, r_cut)
 
         return term1 * term2
