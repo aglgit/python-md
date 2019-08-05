@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -5,10 +6,14 @@ from amp.analysis import read_trainlog
 
 
 class Plotter:
-    def __init__(self):
+    def __init__(self, plot_dir="plots"):
         sns.set()
+        if not os.path.exists(plot_dir):
+            os.mkdir(plot_dir)
+        self.plot_dir = plot_dir
 
     def plot_trainlog(self, log_file, plot_file):
+        plot_file = os.path.join(self.plot_dir, plot_file)
         log = read_trainlog(log_file)
         convergence = log["convergence"]
 
@@ -32,6 +37,7 @@ class Plotter:
         plt.clf()
 
     def plot_rdf(self, plot_file, legend, x, *rdfs):
+        plot_file = os.path.join(self.plot_dir, plot_file)
         for rdf in rdfs:
             plt.plot(x, rdf)
 
@@ -43,6 +49,7 @@ class Plotter:
         plt.clf()
 
     def plot_msd(self, plot_file, legend, steps, *msds):
+        plot_file = os.path.join(self.plot_dir, plot_file)
         for msd in msds:
             plt.plot(steps, msd)
 
@@ -54,6 +61,7 @@ class Plotter:
         plt.clf()
 
     def plot_energy_diff(self, plot_file, legend, steps, energy_exact, energy_amp):
+        plot_file = os.path.join(self.plot_dir, plot_file)
         plt.plot(steps, energy_exact)
         plt.plot(steps, energy_amp)
 
@@ -67,6 +75,7 @@ class Plotter:
     def plot_pot_energy_diff(
         self, plot_file, legend, steps, pot_energy_exact, pot_energy_amp
     ):
+        plot_file = os.path.join(self.plot_dir, plot_file)
         plt.plot(steps, pot_energy_exact)
         plt.plot(steps, pot_energy_amp)
 
@@ -88,6 +97,9 @@ class Plotter:
         force_exact,
         force_diff,
     ):
+        energy_plot_file = os.path.join(self.plot_dir, energy_plot_file)
+        force_plot_file = os.path.join(self.plot_dir, force_plot_file)
+
         plt.scatter(energy_exact, energy_diff)
         plt.axhline(y=energy_rmse, linestyle="--")
         plt.title("Scatterplot of energy error, energy RMSE={:.2E}".format(energy_rmse))
@@ -115,6 +127,9 @@ class Plotter:
         theta=None,
         adf=None,
     ):
+        rad_plot_file = os.path.join(self.plot_dir, rad_plot_file)
+        ang_plot_file = os.path.join(self.plot_dir, ang_plot_file)
+
         if cutoff is None:
             cut = self.cosine
             r_cut = 6.0

@@ -19,9 +19,10 @@ class AtomBuilder:
     def build_atoms(self, system, size, temp, seed=None):
         assert system in self.systems.keys(), "System {} not found!".format(system)
         atoms = self.systems[system](size)
+        rng = np.random
         if seed is not None:
-            np.random.seed(seed)
-        MaxwellBoltzmannDistribution(atoms, temp * units.kB, rng=np.random)
+            rng.seed(seed)
+        MaxwellBoltzmannDistribution(atoms, temp * units.kB, rng=rng)
         Stationary(atoms)
         ZeroRotation(atoms)
 

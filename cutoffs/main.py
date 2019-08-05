@@ -1,25 +1,29 @@
 import sys
+import numpy as np
+from asap3 import EMT
+from amp.descriptor.cutoffs import Cosine, Polynomial
+from amp.descriptor.gaussian import make_symmetry_functions
 
 sys.path.insert(1, "../tools")
 
-import numpy as np
-import pandas as pd
-from asap3 import EMT
-from amp.analysis import calculate_rmses
-from amp.descriptor.cutoffs import Cosine, Polynomial
 from create_trajectory import TrajectoryBuilder
-from trainer import Trainer
+from training import Trainer
 
 
 if __name__ == "__main__":
     system = "copper"
     size = (1, 1, 1)
     temp = 500
-    seed = 0
 
     n_train = int(8e2)
-    n_test = int(2e2)
+    n_test = int(5e2)
     save_interval = 100
+
+    max_steps = int(5e2)
+    convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
+    force_coefficient = None
+    hidden_layers = (10, 10)
+    activation = "tanh"
 
     trjbd = TrajectoryBuilder()
     calc = EMT()
@@ -29,60 +33,54 @@ if __name__ == "__main__":
 
     train_traj = "training.traj"
     test_traj = "test.traj"
-    train_steps, train_traj = trjbd.integrate_atoms(
-        train_atoms, train_traj, n_train, save_interval, convert=True
+    steps, train_traj = trjbd.integrate_atoms(
+        train_atoms, train_traj, n_train, save_interval
     )
-    test_steps, test_traj = trjbd.integrate_atoms(
-        test_atoms, test_traj, n_test, save_interval, convert=True
-    )
-
-    max_steps = int(2e1)
-    convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
-    force_coefficient = 0.1
-    hidden_layers = (10, 10)
-    activation = "tanh"
-    Gs = None
-    trn = Trainer(
-        convergence=convergence,
-        force_coefficient=force_coefficient,
-        hidden_layers=hidden_layers,
-        activation=activation,
-        Gs=Gs,
+    steps, test_traj = trjbd.integrate_atoms(
+        test_atoms, test_traj, n_test, save_interval
     )
 
-    Rcs = [4.0, 5.0, 6.0, 7.0, 8.0]
+    rcs = [3.0, 4.0, 5.0, 6.0, 7.0]
     cutoffs = []
-    for Rc in Rcs:
-        cutoffs.append(Cosine(Rc))
-        cutoffs.append(Polynomial(Rc))
+    for rc in rcs:
+        cutoffs.append(Cosine(rc))
+        cutoffs.append(Polynomial(rc))
 
     calcs = {}
     for cutoff in cutoffs:
-        trn.cutoff = cutoff
-        label = "{}-{}".format(cutoff.__class__.__name__, cutoff.Rc)
-        dblabel = "train-" + label
-        calc = trn.create_calc(label=label, dblabel=dblabel)
-        amp_name = trn.train_calc(calc, train_traj)
+        elements = ["Cu"]
+        nr = 4
+        nz = 1
+        gammas = [1.0, -1.0]
+        radial_etas = 10.0 * np.ones(nr)
+        centers = np.linspace(0.5, cutoff.Rc + 0.5, nr)
+        angular_etas = np.linspace(0.1, 1.0, nr)
+        zetas = [4 ** i for i in range(nz)]
+        G2 = make_symmetry_functions(
+            elements=elements, type="G2", etas=radial_etas, centers=centers
+        )
+        G5 = make_symmetry_functions(
+            elements=elements,
+            type="G5",
+            etas=angular_etas,
+            zetas=zetas,
+            gammas=[1.0, -1.0],
+        )
+        Gs = G2 + G5
 
+        trn = Trainer(
+            convergence=convergence,
+            force_coefficient=force_coefficient,
+            hidden_layers=hidden_layers,
+            activation=activation,
+            cutoff=cutoff,
+            Gs=Gs,
+        )
+
+        label = "{}-{}".format(cutoff.__class__.__name__, cutoff.Rc)
+        calc = trn.create_calc(label=label, dblabel=label)
+        amp_name = trn.train_calc(calc, train_traj)
         calcs[label] = amp_name
 
-    logfile = "log.txt"
-    if not os.path.exists(logfile):
-        columns = ["Cutoff", "Energy RMSE", "Force RMSE"]
-        df = pd.DataFrame(columns=columns)
-
-        for i, (label, amp_name) in enumerate(calcs.items()):
-            print("Testing calculator {} on trajectory {}".format(amp_name, test_traj))
-            dblabel = "test-" + label
-            energy_rmse, force_rmse = calculate_rmses(
-                amp_name, test_traj, dblabel=dblabel
-            )
-
-            row = [label, energy_rmse, force_rmse]
-            df.loc[i] = row
-            df.to_csv(logfile, index=False)
-
-    df = pd.read_csv(
-        logfile, dtype={"Energy RMSE": np.float64, "Force RMSE": np.float64}
-    )
-    print(df.to_latex(float_format="{:.2E}".format, index=False))
+    columns = ["Cutoff", "Energy RMSE", "Force RMSE"]
+    trn.test_calculators(calcs, test_traj, columns)

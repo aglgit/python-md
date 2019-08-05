@@ -1,6 +1,9 @@
 import os
+import numpy as np
+import pandas as pd
 from amp import Amp
 from amp.utilities import TrainingConvergenceError
+from amp.analysis import calculate_rmses
 from amp.descriptor.gaussian import Gaussian
 from amp.model.neuralnetwork import NeuralNetwork
 from amp.model import LossFunction
@@ -60,12 +63,13 @@ class Trainer:
         else:
             print("Calculator {} already exists!".format(amp_name))
             calc = Amp.load(amp_name)
+            calc.label = amp_label
 
             return calc
 
     def train_calc(self, calc, traj_file, calc_dir="calcs", traj_dir="trajs"):
         label = calc.label
-        amp_name = os.path.join(calc_dir, label + ".amp")
+        amp_name = label + ".amp"
         if not os.path.exists(amp_name):
             print(
                 "Training calculator {} from trajectory {}...".format(
@@ -82,3 +86,40 @@ class Trainer:
             print("Trained calculator {} already exists!".format(amp_name))
 
             return amp_name
+
+    def train_calculators(self, parameter, parameter_dict, traj_file):
+        calcs = {}
+        for label, param in parameter_dict.items():
+            setattr(self, parameter, param)
+            calc = self.create_calc(label=label, dblabel=label)
+            amp_name = self.train_calc(calc, traj_file)
+            calcs[label] = amp_name
+
+        return calcs
+
+    def test_calculators(
+        self, calcs, traj_file, columns, logfile="log.txt", calc_dir="calcs"
+    ):
+        if not os.path.exists(logfile):
+            df = pd.DataFrame(columns=columns)
+            for i, (label, amp_name) in enumerate(calcs.items()):
+                print(
+                    "Testing calculator {} on trajectory {}...".format(
+                        amp_name, traj_file
+                    )
+                )
+                dblabel = os.path.join(calc_dir, label + "-test")
+                energy_rmse, force_rmse = calculate_rmses(
+                    amp_name, traj_file, dblabel=dblabel
+                )
+
+                row = [label, energy_rmse, force_rmse]
+                df.loc[i] = row
+                df.to_csv(logfile, index=False)
+        else:
+            print("Logfile {} already exists!".format(logfile))
+
+        df = pd.read_csv(
+            logfile, dtype={"Energy RMSE": np.float64, "Force RMSE": np.float}
+        )
+        print(df.to_latex(float_format="{:.2E}".format, index=False))

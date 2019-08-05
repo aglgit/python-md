@@ -15,15 +15,14 @@ if __name__ == "__main__":
     size = (1, 1, 1)
     temp = 500
 
-    n_test = int(5e2)
+    n_train = int(8e2)
+    n_test = int(2e2)
     save_interval = 100
 
     max_steps = int(5e2)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
-    hidden_layers = (10, 10)
-    activation = "tanh"
-    cutoff = Polynomial(6.0)
+    cutoff = Polynomial(4.0)
 
     elements = ["Cu"]
     gammas = [1.0, -1.0]
@@ -42,39 +41,37 @@ if __name__ == "__main__":
     )
     Gs = G2 + G5
 
-    trn = Trainer(
-        convergence=convergence,
-        force_coefficient=force_coefficient,
-        hidden_layers=hidden_layers,
-        activation=activation,
-        cutoff=cutoff,
-        Gs=Gs,
-    )
-
     trjbd = TrajectoryBuilder()
-    n_images = [10, 20, 50, 100]
-    train_trajs = ["training_n{}.traj".format(ni) for ni in n_images]
-    for i in range(len(n_images)):
-        calc = EMT()
-        train_atoms = trjbd.build_atoms(system, size, temp, calc)
-        n_train = n_images[i] * save_interval
-        steps, train_trajs[i] = trjbd.integrate_atoms(
-            train_atoms, train_trajs[i], n_train, save_interval
-        )
-
-    test_traj = "test.traj"
+    calc = EMT()
+    train_atoms = trjbd.build_atoms(system, size, temp, calc)
     calc = EMT()
     test_atoms = trjbd.build_atoms(system, size, temp, calc)
+
+    train_traj = "training.traj"
+    test_traj = "test.traj"
+    steps, train_traj = trjbd.integrate_atoms(
+        train_atoms, train_traj, n_train, save_interval
+    )
     steps, test_traj = trjbd.integrate_atoms(
         test_atoms, test_traj, n_test, save_interval
     )
 
+    activation = ["tanh", "sigmoid"]
+    hidden_layers = [[10], [20], [30], [40], [10, 10], [20, 10], [30, 10], [40, 40]]
     calcs = {}
-    for i in range(len(n_images)):
-        label = "n{}".format(n_images[i])
-        calc = trn.create_calc(label=label, dblabel=label)
-        amp_name = trn.train_calc(calc, train_trajs[i])
-        calcs[label] = amp_name
+    for ac in activation:
+        for hl in hidden_layers:
+            trn = Trainer(
+                convergence=convergence,
+                force_coefficient=force_coefficient,
+                activation=ac,
+                hidden_layers=hl,
+                cutoff=cutoff,
+            )
+            label = "{}-{}".format(ac, hl)
+            calc = trn.create_calc(label=label, dblabel=label)
+            amp_name = trn.train_calc(calc, train_traj)
+            calcs[label] = amp_name
 
-    columns = ["Number of images", "Energy RMSE", "Force RMSE"]
+    columns = ["Activation/Hidden layers", "Energy RMSE", "Force RMSE"]
     trn.test_calculators(calcs, test_traj, columns)
