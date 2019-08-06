@@ -178,9 +178,12 @@ class Plotter:
 
         plt.figure(1)
         plt.legend()
+        plt.savefig(rad_plot_file)
+        plt.clf()
         plt.figure(2)
         plt.legend()
-        plt.show()
+        plt.savefig(ang_plot_file)
+        plt.clf()
 
     def cosine(self, rij, r_cut):
         term = 0.5 * (1 + np.cos(np.pi * rij / r_cut))
@@ -191,7 +194,7 @@ class Plotter:
         term1 = 1 + gamma * (rij / r_cut) ** (gamma + 1)
         term2 = (gamma + 1) * (rij / r_cut) ** gamma
 
-        return term1 + term2
+        return term1 - term2
 
     def G2(self, eta, center, rij, cutoff, r_cut):
         term1 = np.exp(-eta * (rij - center) ** 2 / r_cut ** 2)

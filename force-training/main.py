@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 from asap3 import EMT
@@ -14,17 +15,17 @@ from plotting import Plotter
 
 if __name__ == "__main__":
     system = "copper"
-    size = (1, 1, 1)
+    size = (3, 3, 3)
     temp = 500
 
-    n_train = int(8e2)
-    n_test = int(2e2)
+    n_train = int(2e4)
+    n_test = int(5e3)
     save_interval = 100
 
-    max_steps = int(5e2)
+    max_steps = int(2e3)
     activation = "tanh"
     hidden_layers = [10, 10]
-    cutoff = Polynomial(4.0)
+    cutoff = Polynomial(5.0)
 
     elements = ["Cu"]
     gammas = [1.0, -1.0]
@@ -64,6 +65,8 @@ if __name__ == "__main__":
     energy_forcetrain = "energy_forcetrain.png"
     force_forcetrain = "force_forcetrain.png"
 
+    calc_dir = "calcs"
+
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     trn_energy = Trainer(
@@ -76,8 +79,9 @@ if __name__ == "__main__":
     label = "energy"
     calc = trn_energy.create_calc(label=label, dblabel=label)
     energy_amp_name = trn_energy.train_calc(calc, train_traj)
+    test_label = os.path.join(calc_dir, "energy-test")
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        energy_amp_name, images=test_traj
+        energy_amp_name, images=test_traj, label=test_label, dblabel=test_label
     )
     plter.plot_amp_error(
         energy_noforcetrain,
@@ -102,8 +106,9 @@ if __name__ == "__main__":
     label = "force"
     calc = trn_force.create_calc(label=label, dblabel=label)
     force_amp_name = trn_force.train_calc(calc, train_traj)
+    test_label = os.path.join(calc_dir, "force-test")
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        force_amp_name, images=test_traj
+        force_amp_name, images=test_traj, label=test_label, dblabel=test_label
     )
     plter.plot_amp_error(
         energy_forcetrain,
