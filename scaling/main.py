@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from asap3 import EMT
+from amp.utilities import Annealer
 from amp.descriptor.cutoffs import Polynomial
 from amp.descriptor.gaussian import make_symmetry_functions
 
@@ -12,18 +13,18 @@ from training import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (1, 1, 1)
+    size = (2, 2, 2)
     temp = 500
 
-    n_test = int(5e2)
+    n_test = int(5e3)
     save_interval = 100
 
-    max_steps = int(5e2)
+    max_steps = int(2e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     hidden_layers = (10, 10)
     activation = "tanh"
-    cutoff = Polynomial(6.0)
+    cutoff = Polynomial(5.0)
 
     elements = ["Cu"]
     gammas = [1.0, -1.0]
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     )
 
     trjbd = TrajectoryBuilder()
-    n_images = [10, 20, 50, 100]
+    n_images = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000]
     train_trajs = ["training_n{}.traj".format(ni) for ni in n_images]
     for i in range(len(n_images)):
         calc = EMT()
@@ -73,6 +74,14 @@ if __name__ == "__main__":
     for i in range(len(n_images)):
         label = "n{}".format(n_images[i])
         calc = trn.create_calc(label=label, dblabel=label)
+        ann = Annealer(
+            calc=calc,
+            images=train_trajs[i],
+            Tmax=20,
+            Tmin=1,
+            steps=4000,
+            train_forces=False,
+        )
         amp_name = trn.train_calc(calc, train_trajs[i])
         calcs[label] = amp_name
 
