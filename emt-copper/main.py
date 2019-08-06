@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from asap3 import EMT
 from amp import Amp
+from amp.utilities import Annealer
 from amp.descriptor.cutoffs import Cosine, Polynomial
 from amp.descriptor.gaussian import make_symmetry_functions
 from amp.model import LossFunction
@@ -77,6 +78,7 @@ if __name__ == "__main__":
 
     label = "energy-trained"
     calc = trn.create_calc(label=label, dblabel=label)
+    ann = Annealer(calc=calc, images=train_traj, Tmax=20, Tmin=1, train_forces=False)
     amp_name = trn.train_calc(calc, train_traj)
 
     label = os.path.join("calcs", "force-trained")
