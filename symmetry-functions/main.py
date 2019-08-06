@@ -12,19 +12,19 @@ from training import Trainer
 
 if __name__ == "__main__":
     system = "copper"
-    size = (1, 1, 1)
+    size = (2, 2, 2)
     temp = 500
 
-    n_train = int(8e2)
-    n_test = int(5e2)
+    n_train = int(8e4)
+    n_test = int(5e3)
     save_interval = 100
 
-    max_steps = int(5e2)
+    max_steps = int(2e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     hidden_layers = (10, 10)
     activation = "tanh"
-    cutoff = Polynomial(6.0)
+    cutoff = Polynomial(5.0)
 
     trjbd = TrajectoryBuilder()
     calc = EMT()
