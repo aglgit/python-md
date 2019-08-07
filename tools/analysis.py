@@ -40,7 +40,7 @@ class Analyzer:
     def calculate_msd(self, traj_file, save_interval=100):
         traj = read(traj_file, ":")
 
-        steps = np.arange(len(traj)) * self.save_interval
+        steps = np.arange(len(traj)) * save_interval
         msd = np.zeros(len(traj))
         init_pos = traj[0].get_positions()
         for i, atoms in enumerate(traj[1:]):
@@ -55,7 +55,7 @@ class Analyzer:
         amp_traj = read(amp_traj_file, ":")
 
         num_images = len(test_traj)
-        steps = np.arange(num_images) * self.save_interval
+        steps = np.arange(num_images) * save_interval
         energy_exact = np.zeros(num_images)
         energy_amp = np.zeros(num_images)
         for i in range(num_images):
@@ -71,7 +71,7 @@ class Analyzer:
         amp_traj = read(amp_traj_file, ":")
 
         num_images = len(test_traj)
-        steps = np.arange(num_images) * self.save_interval
+        steps = np.arange(num_images) * save_interval
         energy_exact = np.zeros(num_images)
         energy_amp = np.zeros(num_images)
         for i in range(num_images):

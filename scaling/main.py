@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from asap3 import EMT
 from amp.utilities import Annealer
-from amp.descriptor.cutoffs import Polynomial
+from amp.descriptor.cutoffs import Cosine
 from amp.descriptor.gaussian import make_symmetry_functions
 
 sys.path.insert(1, "../tools")
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     size = (2, 2, 2)
     temp = 500
 
-    n_test = int(5e3)
+    n_test = int(2e4)
     save_interval = 100
 
     max_steps = int(2e3)
@@ -24,24 +24,30 @@ if __name__ == "__main__":
     force_coefficient = None
     hidden_layers = (10, 10)
     activation = "tanh"
-    cutoff = Polynomial(5.0)
+    cutoff = Cosine(6.0)
 
     elements = ["Cu"]
-    gammas = [1.0, -1.0]
     nr = 4
     nz = 1
-    radial_etas = 10.0 * np.ones(nr)
-    centers = np.linspace(0.5, cutoff.Rc + 0.5, nr)
-    angular_etas = np.linspace(0.1, 1.0, nr)
-    zetas = [4 ** i for i in range(nz)]
-
-    G2 = make_symmetry_functions(
+    radial_etas = np.logspace(np.log10(1.0), np.log10(20.0), nr)
+    centers = np.zeros(nr)
+    G2_uncentered = make_symmetry_functions(
         elements=elements, type="G2", etas=radial_etas, centers=centers
     )
-    G5 = make_symmetry_functions(
-        elements=elements, type="G5", etas=angular_etas, zetas=zetas, gammas=[1.0, -1.0]
+
+    radial_etas = np.logspace(np.log10(5.0), np.log10(20.0), nr)
+    centers = np.linspace(1.0, cutoff.Rc - 1.0, nr)
+    G2_centered = make_symmetry_functions(
+        elements=elements, type="G2", etas=radial_etas, centers=centers
     )
-    Gs = G2 + G5
+    G2 = G2_uncentered + G2_centered
+
+    angular_etas = np.linspace(0.05, 1.0, 8)
+    zetas = [4 ** i for i in range(nz)]
+    G4 = make_symmetry_functions(
+        elements=elements, type="G4", etas=angular_etas, zetas=zetas, gammas=[1.0, -1.0]
+    )
+    Gs = G2 + G4
 
     trn = Trainer(
         convergence=convergence,

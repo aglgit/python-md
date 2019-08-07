@@ -62,8 +62,7 @@ class Trainer:
             return calc
         else:
             print("Calculator {} already exists!".format(amp_name))
-            calc = Amp.load(amp_name)
-            calc.label = amp_label
+            calc = Amp.load(amp_name, label=amp_label, dblabel=amp_dblabel)
 
             return calc
 

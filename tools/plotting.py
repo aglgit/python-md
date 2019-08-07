@@ -176,13 +176,15 @@ class Plotter:
                     label="eta={}, gamma={}, zeta={}".format(eta, gamma, zeta),
                 )
 
+        plt.rc("legend", fontsize=5)
+        plt.rc("legend", fontsize="small")
         plt.figure(1)
         plt.legend()
-        plt.savefig(rad_plot_file)
+        plt.savefig(rad_plot_file, dpi=500)
         plt.clf()
         plt.figure(2)
         plt.legend()
-        plt.savefig(ang_plot_file)
+        plt.savefig(ang_plot_file, dpi=500)
         plt.clf()
 
     def cosine(self, rij, r_cut):

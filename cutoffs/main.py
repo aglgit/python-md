@@ -17,7 +17,7 @@ if __name__ == "__main__":
     temp = 500
 
     n_train = int(8e4)
-    n_test = int(5e3)
+    n_test = int(2e4)
     save_interval = 100
 
     max_steps = int(2e3)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         test_atoms, test_traj, n_test, save_interval
     )
 
-    rcs = [3.0, 4.0, 5.0, 6.0, 7.0]
+    rcs = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
     cutoffs = []
     for rc in rcs:
         cutoffs.append(Cosine(rc))
@@ -52,22 +52,29 @@ if __name__ == "__main__":
         elements = ["Cu"]
         nr = 4
         nz = 1
-        gammas = [1.0, -1.0]
-        radial_etas = 10.0 * np.ones(nr)
-        centers = np.linspace(0.5, cutoff.Rc + 0.5, nr)
-        angular_etas = np.linspace(0.1, 1.0, nr)
-        zetas = [4 ** i for i in range(nz)]
-        G2 = make_symmetry_functions(
+        radial_etas = np.logspace(np.log10(1.0), np.log10(20.0), nr)
+        centers = np.zeros(nr)
+        G2_uncentered = make_symmetry_functions(
             elements=elements, type="G2", etas=radial_etas, centers=centers
         )
-        G5 = make_symmetry_functions(
+
+        radial_etas = np.logspace(np.log10(5.0), np.log10(20.0), nr)
+        centers = np.linspace(1.0, cutoff.Rc - 1.0, nr)
+        G2_centered = make_symmetry_functions(
+            elements=elements, type="G2", etas=radial_etas, centers=centers
+        )
+        G2 = G2_uncentered + G2_centered
+
+        angular_etas = np.linspace(0.05, 1.0, 8)
+        zetas = [4 ** i for i in range(nz)]
+        G4 = make_symmetry_functions(
             elements=elements,
-            type="G5",
+            type="G4",
             etas=angular_etas,
             zetas=zetas,
             gammas=[1.0, -1.0],
         )
-        Gs = G2 + G5
+        Gs = G2 + G4
 
         trn = Trainer(
             convergence=convergence,
