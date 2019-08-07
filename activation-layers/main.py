@@ -83,7 +83,7 @@ if __name__ == "__main__":
                 images=train_traj,
                 Tmax=20,
                 Tmin=1,
-                steps=4000,
+                steps=2000,
                 train_forces=False,
             )
             amp_name = trn.train_calc(calc, train_traj)

@@ -98,7 +98,7 @@ class Trainer:
                 images=traj_file,
                 Tmax=20,
                 Tmin=1,
-                steps=4000,
+                steps=2000,
                 train_forces=False,
             )
             amp_name = self.train_calc(calc, traj_file)
