@@ -87,7 +87,7 @@ if __name__ == "__main__":
     label = "energy"
     calc = trn_energy.create_calc(label=label, dblabel=label)
     ann = Annealer(
-        calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_force=False
+        calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
     )
     energy_amp_name = trn_energy.train_calc(calc, train_traj)
     test_label = os.path.join(calc_dir, "energy-test")
