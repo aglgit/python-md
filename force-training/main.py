@@ -72,8 +72,6 @@ if __name__ == "__main__":
     energy_forcetrain = "energy_forcetrain.png"
     force_forcetrain = "force_forcetrain.png"
 
-    calc_dir = "calcs"
-
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     trn_energy = Trainer(
@@ -85,14 +83,15 @@ if __name__ == "__main__":
         Gs=Gs,
     )
     label = "energy"
-    calc = trn_energy.create_calc(label=label, dblabel=label)
+    dblabel = label + "-train"
+    calc = trn_energy.create_calc(label=label, dblabel=dblabel)
     ann = Annealer(
         calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
     )
     energy_amp_name = trn_energy.train_calc(calc, train_traj)
-    test_label = os.path.join(calc_dir, "energy-test")
+    dblabel = label + "-test"
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        energy_amp_name, images=test_traj, label=test_label, dblabel=test_label
+        energy_amp_name, images=test_traj, label=label, dblabel=dblabel
     )
     plter.plot_amp_error(
         energy_noforcetrain,
@@ -116,14 +115,15 @@ if __name__ == "__main__":
         Gs=Gs,
     )
     label = "force"
-    calc = trn_force.create_calc(label=label, dblabel=label)
+    dblabel = label + "-train"
+    calc = trn_force.create_calc(label=label, dblabel=dblabel)
     ann = Annealer(
         calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=4000, train_forces=False
     )
     force_amp_name = trn_force.train_calc(calc, train_traj)
-    test_label = os.path.join(calc_dir, "force-test")
+    dblabel = label + "-test"
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        force_amp_name, images=test_traj, label=test_label, dblabel=test_label
+        force_amp_name, images=test_traj, label=label, dblabel=dblabel
     )
     plter.plot_amp_error(
         energy_forcetrain,

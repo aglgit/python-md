@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from asap3 import EMT
 from amp.utilities import Annealer
-from amp.descriptor.cutoffs import Cosine, Polynomial
+from amp.descriptor.cutoffs import Cosine
 from amp.descriptor.gaussian import make_symmetry_functions
 
 sys.path.insert(1, "../tools")
@@ -106,7 +106,8 @@ if __name__ == "__main__":
             cutoff=cutoff,
             Gs=symm_func,
         )
-        calc = trn.create_calc(label=label, dblabel=label)
+        dblabel = label + "-train"
+        calc = trn.create_calc(label=label, dblabel=dblabel)
         ann = Annealer(
             calc=calc,
             images=train_traj,

@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from amp import Amp
-from amp.utilities import TrainingConvergenceError, Annealer
+from amp.utilities import TrainingConvergenceError
 from amp.analysis import calculate_rmses
 from amp.descriptor.gaussian import Gaussian
 from amp.model.neuralnetwork import NeuralNetwork
@@ -19,6 +19,7 @@ class Trainer:
         activation="tanh",
         cutoff=6.0,
         Gs=None,
+        calc_dir="calcs",
     ):
         if convergence is None:
             self.convergence = {
@@ -36,11 +37,13 @@ class Trainer:
         self.cutoff = cutoff
         self.Gs = Gs
 
-    def create_calc(self, label="amp", dblabel="amp", calc_dir="calcs"):
         if not os.path.exists(calc_dir):
             os.mkdir(calc_dir)
-        amp_label = os.path.join(calc_dir, label)
-        amp_dblabel = os.path.join(calc_dir, dblabel)
+        self.calc_dir = calc_dir
+
+    def create_calc(self, label, dblabel):
+        amp_label = os.path.join(self.calc_dir, label)
+        amp_dblabel = os.path.join(self.calc_dir, dblabel)
         amp_name = amp_label + ".amp"
         if not os.path.exists(amp_name):
             print("Creating calculator {}...".format(amp_name))
@@ -66,7 +69,7 @@ class Trainer:
 
             return calc
 
-    def train_calc(self, calc, traj_file, calc_dir="calcs", traj_dir="trajs"):
+    def train_calc(self, calc, traj_file):
         label = calc.label
         amp_name = label + ".amp"
         if not os.path.exists(amp_name):
@@ -87,13 +90,7 @@ class Trainer:
             return amp_name
 
     def test_calculators(
-        self,
-        calcs,
-        traj_file,
-        columns,
-        logfile="log.txt",
-        calc_dir="calcs",
-        dblabel=None,
+        self, calcs, traj_file, columns, logfile="log.txt", dblabel=None
     ):
         if not os.path.exists(logfile):
             df = pd.DataFrame(columns=columns)
@@ -103,11 +100,13 @@ class Trainer:
                         amp_name, traj_file
                     )
                 )
-                label = os.path.join(calc_dir, label)
+                amp_label = os.path.join(self.calc_dir, label)
                 if dblabel is None:
-                    dblabel = label + "-test"
+                    amp_dblabel = amp_label + "-test"
+                else:
+                    amp_dblabel = os.path.join(self.calc_dir, dblabel)
                 energy_rmse, force_rmse = calculate_rmses(
-                    amp_name, traj_file, label=label, dblabel=dblabel
+                    amp_name, traj_file, label=amp_label, dblabel=amp_dblabel
                 )
 
                 row = [label, energy_rmse, force_rmse]

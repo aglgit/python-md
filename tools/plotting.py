@@ -14,6 +14,7 @@ class Plotter:
 
     def plot_trainlog(self, log_file, plot_file):
         plot_file = os.path.join(self.plot_dir, plot_file)
+
         log = read_trainlog(log_file)
         convergence = log["convergence"]
 
@@ -38,6 +39,7 @@ class Plotter:
 
     def plot_rdf(self, plot_file, legend, x, *rdfs):
         plot_file = os.path.join(self.plot_dir, plot_file)
+
         for rdf in rdfs:
             plt.plot(x, rdf)
 
@@ -50,6 +52,7 @@ class Plotter:
 
     def plot_msd(self, plot_file, legend, steps, *msds):
         plot_file = os.path.join(self.plot_dir, plot_file)
+
         for msd in msds:
             plt.plot(steps, msd)
 
@@ -62,6 +65,7 @@ class Plotter:
 
     def plot_energy_diff(self, plot_file, legend, steps, energy_exact, energy_amp):
         plot_file = os.path.join(self.plot_dir, plot_file)
+
         plt.plot(steps, energy_exact)
         plt.plot(steps, energy_amp)
 
@@ -76,6 +80,7 @@ class Plotter:
         self, plot_file, legend, steps, pot_energy_exact, pot_energy_amp
     ):
         plot_file = os.path.join(self.plot_dir, plot_file)
+
         plt.plot(steps, pot_energy_exact)
         plt.plot(steps, pot_energy_amp)
 
