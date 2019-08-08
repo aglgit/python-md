@@ -19,8 +19,8 @@ if __name__ == "__main__":
     size = (3, 3, 3)
     temp = 500
 
-    n_train = int(8e4)
-    n_test = int(2e4)
+    n_train = int(5e4)
+    n_test = int(1e4)
     save_interval = 100
 
     max_steps = int(2e3)

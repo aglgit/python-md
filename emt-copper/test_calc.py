@@ -1,18 +1,12 @@
-import os
 import sys
-import numpy as np
 from asap3 import EMT
 from amp import Amp
-from amp.utilities import Annealer
-from amp.descriptor.cutoffs import Cosine, Polynomial
-from amp.descriptor.gaussian import make_symmetry_functions
-from amp.model import LossFunction
+from amp.analysis import calculate_error
 
 sys.path.insert(1, "../tools")
 
 from create_trajectory import TrajectoryBuilder
 from analysis import Analyzer
-from training import Trainer
 from plotting import Plotter
 
 
@@ -21,7 +15,7 @@ if __name__ == "__main__":
     plter.plot_trainlog("calcs/energy-trained-log.txt", "energy_log.png")
     plter.plot_trainlog("calcs/force-trained-log.txt", "force_log.png")
 
-    system = "copper"
+    system = "silicon"
     size = (2, 2, 2)
     temp = 300
 
@@ -44,7 +38,7 @@ if __name__ == "__main__":
         amp_test_atoms, amp_test_traj, n_test, save_interval, convert=True
     )
 
-    legend = ["Test", "AMP"]
+    legend = ["EMT", "AMP"]
     anl = Analyzer()
     r, rdf = anl.calculate_rdf(test_traj, r_max=6.0)
     r_amp, rdf_amp = anl.calculate_rdf(amp_test_traj, r_max=6.0)
@@ -61,3 +55,21 @@ if __name__ == "__main__":
         test_traj, amp_test_traj, save_interval=save_interval
     )
     plter.plot_energy_diff("energy.png", legend, steps, energy_exact, energy_amp)
+
+    steps, msd = anl.calculate_msd(test_traj, save_interval=save_interval)
+    steps, amp_msd = anl.calculate_msd(amp_test_traj, save_interval=save_interval)
+    plter.plot_msd("msd.png", legend, steps, msd, amp_msd)
+
+    energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
+        "calcs/force-trained.amp", test_traj
+    )
+    plter.plot_amp_error(
+        "energy_error.png",
+        "force_error.png",
+        energy_rmse,
+        force_rmse,
+        energy_exact,
+        energy_diff,
+        force_exact,
+        force_diff,
+    )

@@ -4,7 +4,7 @@ import numpy as np
 from asap3 import EMT
 from amp import Amp
 from amp.utilities import Annealer
-from amp.descriptor.cutoffs import Cosine, Polynomial
+from amp.descriptor.cutoffs import Cosine
 from amp.descriptor.gaussian import make_symmetry_functions
 from amp.model import LossFunction
 
@@ -70,14 +70,16 @@ if __name__ == "__main__":
     )
 
     label = "energy-trained"
-    calc = trn.create_calc(label=label, dblabel=label)
+    dblabel = label + "-train"
+    calc = trn.create_calc(label=label, dblabel=dblabel)
     ann = Annealer(
         calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
     )
     amp_name = trn.train_calc(calc, train_traj)
 
     label = os.path.join("calcs", "force-trained")
-    calc = Amp.load(amp_name, label=label, dblabel=label)
+    dblabel = label + "-train"
+    calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
         convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
