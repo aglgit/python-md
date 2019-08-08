@@ -86,7 +86,8 @@ if __name__ == "__main__":
         )
 
         label = "{}-{}".format(cutoff.__class__.__name__, cutoff.Rc)
-        calc = trn.create_calc(label=label, dblabel=label)
+        dblabel = label + "-train"
+        calc = trn.create_calc(label=label, dblabel=dblabel)
         ann = Annealer(
             calc=calc,
             images=train_traj,
