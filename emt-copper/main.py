@@ -29,7 +29,7 @@ if __name__ == "__main__":
     force_coefficient = None
     hidden_layers = (10, 10)
     activation = "tanh"
-    cutoff = Cosine(4.0)
+    cutoff = Cosine(6.0)
 
     elements = ["Cu"]
     nr = 4
@@ -71,7 +71,9 @@ if __name__ == "__main__":
 
     label = "energy-trained"
     calc = trn.create_calc(label=label, dblabel=label)
-    ann = Annealer(calc=calc, images=train_traj, Tmax=20, Tmin=1, train_forces=False)
+    ann = Annealer(
+        calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
+    )
     amp_name = trn.train_calc(calc, train_traj)
 
     label = os.path.join("calcs", "force-trained")

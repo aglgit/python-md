@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from asap3 import EMT
+from amp.utilities import Annealer
 from amp.descriptor.cutoffs import Cosine, Polynomial
 from amp.descriptor.gaussian import make_symmetry_functions
 
@@ -95,7 +96,27 @@ if __name__ == "__main__":
         symm_funcs[label_G4] = G2 + G4
         symm_funcs[label_G5] = G2 + G5
 
-    parameter = "Gs"
-    calcs = trn.train_calculators(parameter, symm_funcs, train_traj)
+    calcs = {}
+    for label, symm_func in symm_funcs.items():
+        trn = Trainer(
+            convergence=convergence,
+            force_coefficient=force_coefficient,
+            hidden_layers=hidden_layers,
+            activation=activation,
+            cutoff=cutoff,
+            Gs=symm_func,
+        )
+        calc = trn.create_calc(label=label, dblabel=label)
+        ann = Annealer(
+            calc=calc,
+            images=train_traj,
+            Tmax=20,
+            Tmin=1,
+            steps=2000,
+            train_forces=False,
+        )
+        amp_name = trn.train_calc(calc, train_traj)
+        calcs[label] = amp_name
+
     columns = ["Symmetry function", "Energy RMSE", "Force RMSE"]
     trn.test_calculators(calcs, test_traj, columns)

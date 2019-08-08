@@ -86,26 +86,6 @@ class Trainer:
 
             return amp_name
 
-    def train_calculators(self, parameter, parameter_dict, traj_file, dblabel=None):
-        calcs = {}
-        for label, param in parameter_dict.items():
-            setattr(self, parameter, param)
-            if dblabel is None:
-                dblabel = label
-            calc = self.create_calc(label=label, dblabel=dblabel)
-            ann = Annealer(
-                calc=calc,
-                images=traj_file,
-                Tmax=20,
-                Tmin=1,
-                steps=2000,
-                train_forces=False,
-            )
-            amp_name = self.train_calc(calc, traj_file)
-            calcs[label] = amp_name
-
-        return calcs
-
     def test_calculators(
         self,
         calcs,
@@ -123,10 +103,11 @@ class Trainer:
                         amp_name, traj_file
                     )
                 )
+                label = os.path.join(calc_dir, label)
                 if dblabel is None:
-                    dblabel = os.path.join(calc_dir, label + "-test")
+                    dblabel = label + "-test"
                 energy_rmse, force_rmse = calculate_rmses(
-                    amp_name, traj_file, dblabel=dblabel
+                    amp_name, traj_file, label=label, dblabel=dblabel
                 )
 
                 row = [label, energy_rmse, force_rmse]

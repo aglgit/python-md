@@ -79,7 +79,8 @@ if __name__ == "__main__":
     calcs = {}
     for i in range(len(n_images)):
         label = "n{}".format(n_images[i])
-        calc = trn.create_calc(label=label, dblabel=label)
+        dblabel = label + "-train"
+        calc = trn.create_calc(label=label, dblabel=dblabel)
         ann = Annealer(
             calc=calc,
             images=train_trajs[i],
