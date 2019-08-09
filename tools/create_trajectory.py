@@ -22,7 +22,7 @@ class TrajectoryBuilder:
         n_steps,
         save_interval,
         steps=0,
-        timestep=1.0,
+        timestep=5.0,
         traj_dir="trajs",
         convert=False,
     ):

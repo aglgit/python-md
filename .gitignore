@@ -126,3 +126,4 @@ cp2k*.*
 
 # GPAW
 gpaw-datasets/
+.gpw
