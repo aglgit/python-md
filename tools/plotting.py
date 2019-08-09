@@ -143,24 +143,25 @@ class Plotter:
                 cut = self.cosine
                 r_cut = cutoff.Rc
             elif cutoff.__class__.__name__ == "Polynomial":
-                cut = self.polynomial
+                cut = lambda rij, r_cut: self.polynomial(rij, r_cut, cutoff.gamma)
                 r_cut = cutoff.Rc
             else:
                 print("Cutoff {} not recognized".format(cutoff))
                 raise NotImplementedError
 
         plt.figure(1)
+        plt.plot(rij, cut(rij, r_cut), label="f_c", linestyle=":")
         if rij is None:
             rij = np.linspace(1e-3, r_cut, 1000)
         if rdf is not None:
             rdf[np.nonzero(rdf)] /= max(rdf)
-            plt.plot(rij, rdf)
+            plt.plot(rij, rdf, label="rdf", linestyle="-.")
         plt.figure(2)
         if theta is None:
             theta = np.linspace(0, np.pi, 1000)
         if adf is not None:
             adf[np.nonzero(adf)] /= max(adf)
-            plt.plot(theta, adf)
+            plt.plot(theta, adf, label="adf", linestyle="--")
 
         for symm_func in Gs:
             if symm_func["type"] == "G2":
@@ -182,7 +183,6 @@ class Plotter:
                 )
 
         plt.rc("legend", fontsize=5)
-        plt.rc("legend", fontsize="small")
         plt.figure(1)
         plt.legend()
         plt.savefig(rad_plot_file, dpi=500)

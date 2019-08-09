@@ -4,7 +4,7 @@ import numpy as np
 from asap3 import EMT
 from amp.utilities import Annealer
 from amp.analysis import calculate_error
-from amp.descriptor.cutoffs import Cosine
+from amp.descriptor.cutoffs import Cosine, Polynomial
 from amp.descriptor.gaussian import make_symmetry_functions
 
 sys.path.insert(1, "../tools")
@@ -26,26 +26,26 @@ if __name__ == "__main__":
     max_steps = int(2e3)
     activation = "tanh"
     hidden_layers = [10, 10]
-    cutoff = Cosine(6.0)
+    cutoff = Polynomial(6.0, gamma=5.0)
 
     elements = ["Cu"]
-    nr = 4
+    nr = 6
     nz = 1
-    radial_etas = np.logspace(np.log10(1.0), np.log10(20.0), nr)
+    radial_etas = np.linspace(1.0, 20.0, nr)
     centers = np.zeros(nr)
     G2_uncentered = make_symmetry_functions(
         elements=elements, type="G2", etas=radial_etas, centers=centers
     )
 
-    radial_etas = np.logspace(np.log10(5.0), np.log10(20.0), nr)
-    centers = np.linspace(1.0, cutoff.Rc - 1.0, nr)
+    radial_etas = 5.0 * np.ones(nr)
+    centers = np.linspace(0.5, cutoff.Rc - 0.5, nr)
     G2_centered = make_symmetry_functions(
         elements=elements, type="G2", etas=radial_etas, centers=centers
     )
     G2 = G2_uncentered + G2_centered
 
-    angular_etas = np.linspace(0.05, 1.0, 8)
-    zetas = [4 ** i for i in range(nz)]
+    angular_etas = np.linspace(0.01, 3.0, nr + 10)
+    zetas = [2 ** i for i in range(nz)]
     G4 = make_symmetry_functions(
         elements=elements, type="G4", etas=angular_etas, zetas=zetas, gammas=[1.0, -1.0]
     )
@@ -89,20 +89,6 @@ if __name__ == "__main__":
         calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
     )
     energy_amp_name = trn_energy.train_calc(calc, train_traj)
-    dblabel = label + "-test"
-    energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        energy_amp_name, images=test_traj, label=label, dblabel=dblabel
-    )
-    plter.plot_amp_error(
-        energy_noforcetrain,
-        force_noforcetrain,
-        energy_rmse,
-        force_rmse,
-        energy_exact,
-        energy_diff,
-        force_exact,
-        force_diff,
-    )
 
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     force_coefficient = 0.1
@@ -118,9 +104,27 @@ if __name__ == "__main__":
     dblabel = label + "-train"
     calc = trn_force.create_calc(label=label, dblabel=dblabel)
     ann = Annealer(
-        calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=4000, train_forces=False
+        calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=True
     )
     force_amp_name = trn_force.train_calc(calc, train_traj)
+
+    label = calc.label
+    dblabel = label + "-test"
+    energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
+        energy_amp_name, images=test_traj, label=label, dblabel=dblabel
+    )
+    plter.plot_amp_error(
+        energy_noforcetrain,
+        force_noforcetrain,
+        energy_rmse,
+        force_rmse,
+        energy_exact,
+        energy_diff,
+        force_exact,
+        force_diff,
+    )
+
+    label = calc.label
     dblabel = label + "-test"
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
         force_amp_name, images=test_traj, label=label, dblabel=dblabel

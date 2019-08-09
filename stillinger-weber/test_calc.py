@@ -1,5 +1,5 @@
 import sys
-from asap3 import OpenKIMcalculator
+from asap3 import EMT
 from amp import Amp
 from amp.analysis import calculate_error
 
@@ -15,15 +15,15 @@ if __name__ == "__main__":
     plter.plot_trainlog("calcs/energy-trained-log.txt", "energy_log.png")
     plter.plot_trainlog("calcs/force-trained-log.txt", "force_log.png")
 
-    system = "silicon"
+    system = "copper"
     size = (2, 2, 2)
     temp = 300
 
-    n_test = int(5e3)
+    n_test = int(1e3)
     save_interval = 10
 
     trjbd = TrajectoryBuilder()
-    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
+    calc = EMT()
     test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
     calc = Amp.load("calcs/force-trained.amp")
     amp_test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)

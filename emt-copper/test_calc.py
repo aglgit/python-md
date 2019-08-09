@@ -15,7 +15,7 @@ if __name__ == "__main__":
     plter.plot_trainlog("calcs/energy-trained-log.txt", "energy_log.png")
     plter.plot_trainlog("calcs/force-trained-log.txt", "force_log.png")
 
-    system = "silicon"
+    system = "copper"
     size = (2, 2, 2)
     temp = 300
 

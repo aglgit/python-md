@@ -82,7 +82,7 @@ if __name__ == "__main__":
     calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
-        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.05
     )
     calc.model.lossfunction = loss_function
-    amp_name = trn.train_calc(calc, train_traj)
+    amp_name = trn.train_calc(calc, train_force_traj)

@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=AMP
 #SBATCH --account=nn2977k
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem-per-cpu=3500M
 #SBATCH --nodes=1 --ntasks-per-node=16
 #SBATCH --output=slurm.out
