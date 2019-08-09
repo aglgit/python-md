@@ -34,7 +34,7 @@ if __name__ == "__main__":
     trn = Trainer(
         convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff
     )
-    trn.create_Gs(element, num_radial_etas, num_angular_etas, num_zetas, angular_type)
+    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
     trjbd = TrajectoryBuilder()
     calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
-        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.05
     )
     calc.model.lossfunction = loss_function
     amp_name = trn.train_calc(calc, train_force_traj)

@@ -1,5 +1,5 @@
 import sys
-from asap3 import EMT
+from asap3 import OpenKIMcalculator
 from amp import Amp
 from amp.analysis import calculate_error
 
@@ -15,30 +15,30 @@ if __name__ == "__main__":
     plter.plot_trainlog("calcs/energy-trained-log.txt", "energy_log.png")
     plter.plot_trainlog("calcs/force-trained-log.txt", "force_log.png")
 
-    system = "copper"
+    system = "silicon"
     size = (2, 2, 2)
-    temp = 300
-
-    n_test = int(1e3)
+    temp = 500
+    n_test = int(5e3)
     save_interval = 10
+    timestep = 5.0
 
     trjbd = TrajectoryBuilder()
-    calc = EMT()
+    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
     test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
     calc = Amp.load("calcs/force-trained.amp")
     amp_test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
 
     test_traj = "test.traj"
     steps, test_traj = trjbd.integrate_atoms(
-        test_atoms, test_traj, n_test, save_interval, convert=True
+        test_atoms, test_traj, n_test, save_interval, timestep=timestep, convert=True,
     )
 
     amp_test_traj = "amp_test.traj"
     steps, amp_test_traj = trjbd.integrate_atoms(
-        amp_test_atoms, amp_test_traj, n_test, save_interval, convert=True
+        amp_test_atoms, amp_test_traj, n_test, save_interval, timestep=timestep, convert=True
     )
 
-    legend = ["EMT", "AMP"]
+    legend = ["SW", "AMP"]
     anl = Analyzer()
     r, rdf = anl.calculate_rdf(test_traj, r_max=6.0)
     r_amp, rdf_amp = anl.calculate_rdf(amp_test_traj, r_max=6.0)
