@@ -123,3 +123,6 @@ cp2k*.*
 
 # Abel
 *.out
+
+# GPAW
+gpaw-datasets/
