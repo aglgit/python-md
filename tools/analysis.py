@@ -25,12 +25,10 @@ class Analyzer:
 
         coord_min_max = np.zeros((len(traj), 2))
         coord_all_avg = np.zeros(len(traj))
-
         for i, atoms in enumerate(traj):
             c = CoordinationNumbers(atoms, rCut=r_cut)
             coord_min_max[i] = c.min(), c.max()
             coord_all_avg[i] = np.mean(c)
-
         coord_min = coord_min_max[:, 0].min()
         coord_max = coord_min_max[:, 1].max()
         coord_avg = np.mean(coord_all_avg)

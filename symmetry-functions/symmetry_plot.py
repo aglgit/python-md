@@ -7,14 +7,22 @@ sys.path.insert(1, "../tools")
 
 from analysis import Analyzer
 from plotting import Plotter
+from training import Trainer
 
 
 if __name__ == "__main__":
     train_traj = "trajs/training.traj"
-
-    symm_funcs = {}
-    elements = ["Cu"]
     cutoff = Polynomial(6.0, gamma=5.0)
+    elements = ["Cu"]
+    num_radial_etas = 6
+    num_angular_etas = 10
+    num_zetas = 1
+    angular_type = "G4"
+    symm_funcs = {}
+
+    trn = Trainer(cutoff=cutoff)
+    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
+    symm_funcs["Selected"] = trn.Gs
 
     G2 = make_symmetry_functions(
         elements=elements, type="G2", etas=[0.05, 0.23, 1.0, 5.0], centers=np.zeros(4)
@@ -27,27 +35,6 @@ if __name__ == "__main__":
         gammas=[1.0, -1.0],
     )
     symm_funcs["Default"] = G2 + G4
-
-    nr = 6
-    nz = 1
-    radial_etas = np.linspace(1.0, 20.0, nr)
-    centers = np.zeros(nr)
-    G2_uncentered = make_symmetry_functions(
-        elements=elements, type="G2", etas=radial_etas, centers=centers
-    )
-
-    radial_etas = 5.0 * np.ones(nr)
-    centers = np.linspace(0.5, cutoff.Rc - 0.5, nr)
-    G2_centered = make_symmetry_functions(
-        elements=elements, type="G2", etas=radial_etas, centers=centers
-    )
-
-    angular_etas = np.linspace(0.01, 3.0, nr + 10)
-    zetas = [2 ** i for i in range(nz)]
-    G4 = make_symmetry_functions(
-        elements=elements, type="G4", etas=angular_etas, zetas=zetas, gammas=[1.0, -1.0]
-    )
-    symm_funcs["Selected"] = G2_uncentered + G2_centered + G4
 
     anl = Analyzer()
     plter = Plotter()

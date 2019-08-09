@@ -1,11 +1,8 @@
-import os
 import sys
-import numpy as np
 from asap3 import EMT
 from amp.utilities import Annealer
 from amp.analysis import calculate_error
 from amp.descriptor.cutoffs import Cosine, Polynomial
-from amp.descriptor.gaussian import make_symmetry_functions
 
 sys.path.insert(1, "../tools")
 
@@ -16,40 +13,21 @@ from plotting import Plotter
 
 if __name__ == "__main__":
     system = "copper"
+    elements = ["Cu"]
     size = (3, 3, 3)
     temp = 500
-
     n_train = int(5e4)
     n_test = int(1e4)
     save_interval = 100
 
     max_steps = int(2e3)
-    activation = "tanh"
-    hidden_layers = [10, 10]
     cutoff = Polynomial(6.0, gamma=5.0)
-
-    elements = ["Cu"]
-    nr = 6
-    nz = 1
-    radial_etas = np.linspace(1.0, 20.0, nr)
-    centers = np.zeros(nr)
-    G2_uncentered = make_symmetry_functions(
-        elements=elements, type="G2", etas=radial_etas, centers=centers
-    )
-
-    radial_etas = 5.0 * np.ones(nr)
-    centers = np.linspace(0.5, cutoff.Rc - 0.5, nr)
-    G2_centered = make_symmetry_functions(
-        elements=elements, type="G2", etas=radial_etas, centers=centers
-    )
-    G2 = G2_uncentered + G2_centered
-
-    angular_etas = np.linspace(0.01, 3.0, nr + 10)
-    zetas = [2 ** i for i in range(nz)]
-    G4 = make_symmetry_functions(
-        elements=elements, type="G4", etas=angular_etas, zetas=zetas, gammas=[1.0, -1.0]
-    )
-    Gs = G2 + G4
+    num_radial_etas = 6
+    num_angular_etas = 10
+    num_zetas = 1
+    angular_type = "G4"
+    trn = Trainer(cutoff=cutoff)
+    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, radial_type)
 
     trjbd = TrajectoryBuilder()
     calc = EMT()
@@ -74,14 +52,8 @@ if __name__ == "__main__":
 
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
-    trn_energy = Trainer(
-        convergence=convergence,
-        force_coefficient=force_coefficient,
-        activation=activation,
-        hidden_layers=hidden_layers,
-        cutoff=cutoff,
-        Gs=Gs,
-    )
+    trn.convergence = convergence
+    trn.force_coefficient = force_coefficient
     label = "energy"
     dblabel = label + "-train"
     calc = trn_energy.create_calc(label=label, dblabel=dblabel)
@@ -92,14 +64,8 @@ if __name__ == "__main__":
 
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     force_coefficient = 0.1
-    trn_force = Trainer(
-        convergence=convergence,
-        force_coefficient=force_coefficient,
-        activation=activation,
-        hidden_layers=hidden_layers,
-        cutoff=cutoff,
-        Gs=Gs,
-    )
+    trn.convergence = convergence
+    trn.force_coefficient = force_coefficient
     label = "force"
     dblabel = label + "-train"
     calc = trn_force.create_calc(label=label, dblabel=dblabel)

@@ -1,11 +1,9 @@
 import os
 import sys
-import numpy as np
 from asap3 import OpenKIMcalculator
 from amp import Amp
 from amp.utilities import Annealer
-from amp.descriptor.cutoffs import Cosine
-from amp.descriptor.gaussian import make_symmetry_functions
+from amp.descriptor.cutoffs import Cosine, Polynomial
 from amp.model import LossFunction
 
 sys.path.insert(1, "../tools")
@@ -17,9 +15,9 @@ from plotting import Plotter
 
 if __name__ == "__main__":
     system = "silicon"
+    elements = ["Si"]
     size = (2, 2, 2)
     temp = 500
-
     n_train = int(8e5)
     n_train_force = int(5e4)
     save_interval = 100
@@ -28,34 +26,15 @@ if __name__ == "__main__":
     max_steps = int(2e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
-    hidden_layers = (10, 10)
-    activation = "tanh"
     cutoff = Cosine(6.0)
-
-    elements = ["Cu"]
-    nr = 4
-    nz = 1
-    gammas = [1.0, -1.0]
-    radial_etas = 10.0 * np.ones(nr)
-    centers = np.linspace(0.5, cutoff.Rc + 0.5, nr)
-    angular_etas = np.linspace(0.1, 1.0, nr)
-    zetas = [4 ** i for i in range(nz)]
-    G2 = make_symmetry_functions(
-        elements=elements, type="G2", etas=radial_etas, centers=centers
-    )
-    G4 = make_symmetry_functions(
-        elements=elements, type="G4", etas=angular_etas, zetas=zetas, gammas=[1.0, -1.0]
-    )
-    Gs = G2 + G4
-
+    num_radial_etas = 6
+    num_angular_etas = 10
+    num_zetas = 1
+    angular_type = "G4"
     trn = Trainer(
-        convergence=convergence,
-        force_coefficient=force_coefficient,
-        hidden_layers=hidden_layers,
-        activation=activation,
-        cutoff=cutoff,
-        Gs=Gs,
+        convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff
     )
+    trn.create_Gs(element, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
     trjbd = TrajectoryBuilder()
     calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
@@ -88,7 +67,7 @@ if __name__ == "__main__":
     calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
-        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.05
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
     )
     calc.model.lossfunction = loss_function
     amp_name = trn.train_calc(calc, train_force_traj)

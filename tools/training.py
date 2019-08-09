@@ -4,7 +4,8 @@ import pandas as pd
 from amp import Amp
 from amp.utilities import TrainingConvergenceError
 from amp.analysis import calculate_rmses
-from amp.descriptor.gaussian import Gaussian
+from amp.descriptor.cutoffs import Cosine, Polynomial
+from amp.descriptor.gaussian import Gaussian, make_symmetry_functions
 from amp.model.neuralnetwork import NeuralNetwork
 from amp.model import LossFunction
 
@@ -17,7 +18,7 @@ class Trainer:
         force_coefficient=None,
         hidden_layers=(10, 10),
         activation="tanh",
-        cutoff=6.0,
+        cutoff=Cosine(6.0),
         Gs=None,
         calc_dir="calcs",
     ):
@@ -40,6 +41,33 @@ class Trainer:
         if not os.path.exists(calc_dir):
             os.mkdir(calc_dir)
         self.calc_dir = calc_dir
+
+    def create_Gs(
+        self, elements, num_radial_etas, num_angular_etas, num_zetas, angular_type
+    ):
+        uncentered_etas = np.linspace(1.0, 20.0, num_radial_etas)
+        centers = np.zeros(num_radial_etas)
+        G2_uncentered = make_symmetry_functions(
+            elements=elements, type="G2", etas=uncentered_etas, centers=centers
+        )
+
+        centered_etas = 5.0 * np.ones(num_radial_etas)
+        centers = np.linspace(0.5, self.cutoff.Rc - 0.5, num_radial_etas)
+        G2_centered = make_symmetry_functions(
+            elements=elements, type="G2", etas=centered_etas, centers=centers
+        )
+
+        angular_etas = np.linspace(0.01, 3.0, num_angular_etas)
+        zetas = [2 ** i for i in range(num_zetas)]
+        G_ang = make_symmetry_functions(
+            elements=elements,
+            type=angular_type,
+            etas=angular_etas,
+            zetas=zetas,
+            gammas=[1.0, -1.0],
+        )
+
+        self.Gs = G2_uncentered + G2_centered + G_ang
 
     def create_calc(self, label, dblabel):
         amp_label = os.path.join(self.calc_dir, label)
