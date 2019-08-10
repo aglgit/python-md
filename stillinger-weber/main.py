@@ -27,8 +27,8 @@ if __name__ == "__main__":
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     cutoff = Cosine(6.0)
-    num_radial_etas = 6
-    num_angular_etas = 10
+    num_radial_etas = 8
+    num_angular_etas = num_radial_etas + 4
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(

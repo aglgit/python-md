@@ -20,7 +20,7 @@ if __name__ == "__main__":
     temp = 500
     n_test = int(5e3)
     save_interval = 10
-    timestep = 5.0
+    timestep = 2.5
 
     trjbd = TrajectoryBuilder()
     calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")

@@ -18,6 +18,7 @@ if __name__ == "__main__":
     system = "copper"
     size = (2, 2, 2)
     temp = 300
+    timestep = 5.0
 
     n_test = int(1e3)
     save_interval = 10
@@ -30,12 +31,12 @@ if __name__ == "__main__":
 
     test_traj = "test.traj"
     steps, test_traj = trjbd.integrate_atoms(
-        test_atoms, test_traj, n_test, save_interval, convert=True
+        test_atoms, test_traj, n_test, save_interval, timestep=timestep, convert=True
     )
 
     amp_test_traj = "amp_test.traj"
     steps, amp_test_traj = trjbd.integrate_atoms(
-        amp_test_atoms, amp_test_traj, n_test, save_interval, convert=True
+        amp_test_atoms, amp_test_traj, n_test, save_interval, timestep=timestep, convert=True
     )
 
     legend = ["EMT", "AMP"]

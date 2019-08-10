@@ -14,4 +14,5 @@ dependencies:
     - ase
     - asap3
     - amp-atomistics
+    - gpaw
     - tensorflow==2.0.0-beta1

@@ -14,8 +14,8 @@ if __name__ == "__main__":
     train_traj = "trajs/training.traj"
     cutoff = Polynomial(6.0, gamma=5.0)
     elements = ["Cu"]
-    num_radial_etas = 6
-    num_angular_etas = 10
+    num_radial_etas = 8
+    num_angular_etas = 12
     num_zetas = 1
     angular_type = "G4"
     symm_funcs = {}
