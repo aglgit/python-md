@@ -18,9 +18,9 @@ if __name__ == "__main__":
     system = "copper"
     size = (2, 2, 2)
     temp = 300
-    timestep = 5.0
+    timestep = 2.5
 
-    n_test = int(1e3)
+    n_test = int(5e3)
     save_interval = 10
 
     trjbd = TrajectoryBuilder()
