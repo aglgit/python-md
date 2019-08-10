@@ -27,7 +27,7 @@ if __name__ == "__main__":
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(cutoff=cutoff)
-    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, radial_type)
+    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
     trjbd = TrajectoryBuilder()
     calc = EMT()
@@ -56,11 +56,11 @@ if __name__ == "__main__":
     trn.force_coefficient = force_coefficient
     label = "energy"
     dblabel = label + "-train"
-    calc = trn_energy.create_calc(label=label, dblabel=dblabel)
+    calc = trn.create_calc(label=label, dblabel=dblabel)
     ann = Annealer(
         calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
     )
-    energy_amp_name = trn_energy.train_calc(calc, train_traj)
+    energy_amp_name = trn.train_calc(calc, train_traj)
 
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     force_coefficient = 0.1
@@ -68,11 +68,11 @@ if __name__ == "__main__":
     trn.force_coefficient = force_coefficient
     label = "force"
     dblabel = label + "-train"
-    calc = trn_force.create_calc(label=label, dblabel=dblabel)
+    calc = trn.create_calc(label=label, dblabel=dblabel)
     ann = Annealer(
         calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=True
     )
-    force_amp_name = trn_force.train_calc(calc, train_traj)
+    force_amp_name = trn.train_calc(calc, train_traj)
 
     label = calc.label
     dblabel = label + "-test"
