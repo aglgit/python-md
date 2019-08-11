@@ -1,5 +1,5 @@
 import sys
-from asap3 import OpenKIMcalculator
+from asap3 import EMT
 from amp import Amp
 from amp.analysis import calculate_error
 
@@ -11,54 +11,65 @@ from plotting import Plotter
 
 
 if __name__ == "__main__":
-    plter = Plotter()
-    plter.plot_trainlog("calcs/energy-trained-log.txt", "energy_log.png")
-    plter.plot_trainlog("calcs/force-trained-log.txt", "force_log.png")
-
     system = "silicon"
     size = (2, 2, 2)
     temp = 500
+    timestep = 2.5
     n_test = int(5e3)
     save_interval = 10
-    timestep = 2.5
+
+    energy_log = "energy-trained-log.txt"
+    force_log = "force-trained-log.txt"
+    energy_plot = system + "_" + "energy_log.png"
+    force_plot = system + "_" + "force_log.png"
+    plter = Plotter()
+    plter.plot_trainlog(energy_log, energy_plot)
+    plter.plot_trainlog(force_log, force_plot)
 
     trjbd = TrajectoryBuilder()
-    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
+    calc = EMT()
     test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
     calc = Amp.load("calcs/force-trained.amp")
     amp_test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
 
     test_traj = "test.traj"
     steps, test_traj = trjbd.integrate_atoms(
-        test_atoms, test_traj, n_test, save_interval, timestep=timestep, convert=True,
+        test_atoms, test_traj, n_test, save_interval, timestep=timestep, convert=True
     )
 
     amp_test_traj = "amp_test.traj"
     steps, amp_test_traj = trjbd.integrate_atoms(
-        amp_test_atoms, amp_test_traj, n_test, save_interval, timestep=timestep, convert=True
+        amp_test_atoms,
+        amp_test_traj,
+        n_test,
+        save_interval,
+        timestep=timestep,
+        convert=True,
     )
 
     legend = ["SW", "AMP"]
     anl = Analyzer()
     r, rdf = anl.calculate_rdf(test_traj, r_max=6.0)
     r_amp, rdf_amp = anl.calculate_rdf(amp_test_traj, r_max=6.0)
-    plter.plot_rdf("rdf.png", legend, r, rdf, rdf_amp)
+    rdf_plot = system + "_" + "rdf.png"
+    plter.plot_rdf(rdf_plot, legend, r, rdf, rdf_amp)
 
     steps, energy_exact, energy_amp = anl.calculate_pot_energy_diff(
         test_traj, amp_test_traj, save_interval=save_interval
     )
-    plter.plot_pot_energy_diff(
-        "pot_energy.png", legend, steps, energy_exact, energy_amp
-    )
+    pot_plot = system + "_" + "pot.png"
+    plter.plot_pot_energy_diff(pot_plot, legend, steps, energy_exact, energy_amp)
 
     steps, energy_exact, energy_amp = anl.calculate_energy_diff(
         test_traj, amp_test_traj, save_interval=save_interval
     )
-    plter.plot_energy_diff("energy.png", legend, steps, energy_exact, energy_amp)
+    energy_plot = system + "_" + "energy.png"
+    plter.plot_energy_diff(energy_plot, legend, steps, energy_exact, energy_amp)
 
     steps, msd = anl.calculate_msd(test_traj, save_interval=save_interval)
     steps, amp_msd = anl.calculate_msd(amp_test_traj, save_interval=save_interval)
-    plter.plot_msd("msd.png", legend, steps, msd, amp_msd)
+    msd_plot = system + "_" + "msd.png"
+    plter.plot_msd(msd_plot, legend, steps, msd, amp_msd)
 
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
         "calcs/force-trained.amp", test_traj

@@ -19,14 +19,14 @@ if __name__ == "__main__":
     atmb = AtomBuilder()
     atoms = atmb.build_atoms(system, size, temp)
 
-    calc = GPAW(symmetry={'point_group': False})
+    calc = GPAW(symmetry={"point_group": False})
     atoms.set_calculator(calc)
     atoms.get_potential_energy()
     calc.write(system + ".gpw", mode="all")
 
     # Ehrenfest simulation parameters
-    timestep = 10.0     # timestep given in attoseconds
-    count = 5000        # run for 500 timesteps
+    timestep = 10.0  # timestep given in attoseconds
+    count = 5000  # run for 500 timesteps
 
     tdcalc = TDDFT(
         system + ".gpw", txt=system + "_td.txt", propagator="EFSICN", solver="BiCGStab"

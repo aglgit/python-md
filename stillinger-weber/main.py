@@ -19,20 +19,24 @@ if __name__ == "__main__":
     size = (2, 2, 2)
     temp = 500
     n_train = int(8e5)
-    n_train_force = int(5e4)
+    n_train_force = int(1e5)
     save_interval = 100
     timestep = 5.0
 
-    max_steps = int(2e3)
+    max_steps = int(4e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
-    cutoff = Cosine(6.0)
-    num_radial_etas = 8
-    num_angular_etas = num_radial_etas + 4
+    hidden_layers = [10]
+    cutoff = Polynomial(5.0, gamma=5.0)
+    num_radial_etas = 7
+    num_angular_etas = 11
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(
-        convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff
+        convergence=convergence,
+        force_coefficient=force_coefficient,
+        cutoff=cutoff,
+        hidden_layers=hidden_layers,
     )
     trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
@@ -67,7 +71,7 @@ if __name__ == "__main__":
     calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
-        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.05
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
     )
     calc.model.lossfunction = loss_function
     amp_name = trn.train_calc(calc, train_force_traj)

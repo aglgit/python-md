@@ -6,13 +6,14 @@ from amp.analysis import read_trainlog
 
 
 class Plotter:
-    def __init__(self, plot_dir="plots"):
+    def __init__(self, plot_dir="plots", calc_dir="calcs"):
         sns.set()
         if not os.path.exists(plot_dir):
             os.mkdir(plot_dir)
         self.plot_dir = plot_dir
 
     def plot_trainlog(self, log_file, plot_file):
+        log_file = os.path.join(self.calc_dir, log_file)
         plot_file = os.path.join(self.plot_dir, plot_file)
 
         log = read_trainlog(log_file)
