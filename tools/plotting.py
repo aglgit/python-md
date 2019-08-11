@@ -11,6 +11,7 @@ class Plotter:
         if not os.path.exists(plot_dir):
             os.mkdir(plot_dir)
         self.plot_dir = plot_dir
+        self.calc_dir = calc_dir
 
     def plot_trainlog(self, log_file, plot_file):
         log_file = os.path.join(self.calc_dir, log_file)

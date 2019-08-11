@@ -1,5 +1,5 @@
 import sys
-from asap3 import EMT
+from asap3 import OpenKIMcalculator
 from amp import Amp
 from amp.analysis import calculate_error
 
@@ -17,6 +17,7 @@ if __name__ == "__main__":
     timestep = 2.5
     n_test = int(5e3)
     save_interval = 10
+    legend = ["SW", "AMP"]
 
     energy_log = "energy-trained-log.txt"
     force_log = "force-trained-log.txt"
@@ -27,7 +28,7 @@ if __name__ == "__main__":
     plter.plot_trainlog(force_log, force_plot)
 
     trjbd = TrajectoryBuilder()
-    calc = EMT()
+    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
     test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
     calc = Amp.load("calcs/force-trained.amp")
     amp_test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
@@ -47,7 +48,6 @@ if __name__ == "__main__":
         convert=True,
     )
 
-    legend = ["SW", "AMP"]
     anl = Analyzer()
     r, rdf = anl.calculate_rdf(test_traj, r_max=6.0)
     r_amp, rdf_amp = anl.calculate_rdf(amp_test_traj, r_max=6.0)
