@@ -1,48 +1,69 @@
+import os
 import sys
-from gpaw import GPAW, mpi
-from gpaw.tddft import TDDFT
-from gpaw.tddft.ehrenfest import EhrenfestVelocityVerlet
-from ase.units import Hartree, Bohr, AUT
-from ase.io import read, write, Trajectory
+from gpaw import GPAW
+from amp import Amp
+from amp.utilities import Annealer
+from amp.descriptor.cutoffs import Cosine, Polynomial
+from amp.model import LossFunction
 
 sys.path.insert(1, "../tools")
 
-from build_atoms import AtomBuilder
+from create_trajectory import TrajectoryBuilder
+from training import Trainer
+from plotting import Plotter
+
 
 if __name__ == "__main__":
-    system = "copper"
-    size = (1, 1, 1)
-    temp = 500
+    system = "silicon"
+    elements = ["Si"]
+    size = (2, 2, 2)
+    temp = 1000
+    n_train = int(5e3)
+    n_train_force = int(1e3)
+    save_interval = 5
+    timestep = 0.5
 
-    rank = mpi.world.rank
-
-    atmb = AtomBuilder()
-    atoms = atmb.build_atoms(system, size, temp)
-
-    calc = GPAW(symmetry={"point_group": False})
-    atoms.set_calculator(calc)
-    atoms.get_potential_energy()
-    calc.write(system + ".gpw", mode="all")
-
-    # Ehrenfest simulation parameters
-    timestep = 10.0  # timestep given in attoseconds
-    count = 5000  # run for 500 timesteps
-
-    tdcalc = TDDFT(
-        system + ".gpw", txt=system + "_td.txt", propagator="EFSICN", solver="BiCGStab"
+    max_steps = int(4e3)
+    convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
+    force_coefficient = None
+    hidden_layers = [10]
+    cutoff = Polynomial(5.0, gamma=5.0)
+    num_radial_etas = 7
+    num_angular_etas = 11
+    num_zetas = 1
+    angular_type = "G4"
+    trn = Trainer(
+        convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff, hidden_layers=hidden_layers,
     )
-    ehrenfest = EhrenfestVelocityVerlet(tdcalc)
-    if rank == 0:
-        traj = Trajectory("training.traj", "w", tdcalc.get_atoms())
+    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
-    for i in range(count):
-        if rank == 0:
-            energy = tdcalc.get_td_energy() * Hartree
-            f = ehrenfest.F * Hartree / Bohr
-            v = ehrenfest.v * Bohr / AUT
-            atoms = tdcalc.atoms.copy()
-            atoms.set_velocities(v)
-            print("Step: {}, Total energy: {}".format(i, energy))
-            traj.write(atoms, energy=energy, forces=f)
+    trjbd = TrajectoryBuilder()
+    calc = GPAW(mode="pw", symmetry={"point_group": False})
+    train_atoms = trjbd.build_atoms(system, size, temp, calc)
 
-        ehrenfest.propagate(timestep)
+    train_traj = "training.traj"
+    train_force_traj = "training_force.traj"
+    steps, train_traj = trjbd.integrate_atoms(
+        train_atoms, train_traj, n_train, save_interval, timestep=timestep,
+    )
+    steps, train_force_traj = trjbd.integrate_atoms(
+        train_atoms, train_force_traj, n_train_force, save_interval, steps=steps, timestep=timestep,
+    )
+
+    label = "energy-trained"
+    dblabel = label + "-train"
+    calc = trn.create_calc(label=label, dblabel=dblabel)
+    ann = Annealer(
+        calc=calc, images=train_traj, Tmax=20, Tmin=1, steps=2000, train_forces=False
+    )
+    amp_name = trn.train_calc(calc, train_traj)
+
+    label = os.path.join("calcs", "force-trained")
+    dblabel = label + "-train"
+    calc = Amp.load(amp_name, label=label, dblabel=dblabel)
+    convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
+    loss_function = LossFunction(
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
+    )
+    calc.model.lossfunction = loss_function
+    amp_name = trn.train_calc(calc, train_force_traj)
