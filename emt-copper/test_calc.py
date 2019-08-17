@@ -13,10 +13,12 @@ from plotting import Plotter
 if __name__ == "__main__":
     system = "copper"
     size = (2, 2, 2)
-    temp = 500
-    timestep = 2.5
+    temp = 300
+    timestep = 1.0
     n_test = int(5e3)
+    log = "log.txt"
     save_interval = 10
+    log = "log.txt"
     legend = ["EMT", "AMP"]
 
     energy_log = "energy-trained-log.txt"
@@ -46,6 +48,7 @@ if __name__ == "__main__":
         save_interval,
         timestep=timestep,
         convert=True,
+        log=log,
     )
 
     anl = Analyzer()

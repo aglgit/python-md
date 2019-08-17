@@ -17,7 +17,7 @@ if __name__ == "__main__":
     system = "silicon"
     elements = ["Si"]
     size = (2, 2, 2)
-    temp = 500
+    temp = 1000
     n_train = int(2e6)
     n_train_force = int(1e5)
     save_interval = 100

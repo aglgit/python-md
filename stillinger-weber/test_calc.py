@@ -13,8 +13,8 @@ from plotting import Plotter
 if __name__ == "__main__":
     system = "silicon"
     size = (2, 2, 2)
-    temp = 500
-    timestep = 2.5
+    temp = 300
+    timestep = 1.0
     n_test = int(5e3)
     save_interval = 10
     legend = ["SW", "AMP"]

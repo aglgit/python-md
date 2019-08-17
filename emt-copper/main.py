@@ -17,8 +17,8 @@ if __name__ == "__main__":
     system = "copper"
     elements = ["Cu"]
     size = (2, 2, 2)
-    temp = 500
-    n_train = int(8e5)
+    temp = 1000
+    n_train = int(2e6)
     n_train_force = int(1e5)
     save_interval = 100
 
@@ -26,9 +26,9 @@ if __name__ == "__main__":
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     hidden_layers = [10]
-    cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 7
-    num_angular_etas = 11
+    cutoff = Polynomial(5.0, gamma=5.0)
+    num_radial_etas = 4
+    num_angular_etas = 8
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(
