@@ -25,13 +25,13 @@ class Plotter:
         force_rmse = convergence["fs"]
         loss = convergence["costfxns"]
 
-        plt.semilogy(steps, energy_rmse, label="Energy RMSE")
+        plt.loglog(steps, energy_rmse, label="Energy RMSE")
         if force_rmse:
-            plt.semilogy(steps, force_rmse, label="Force RMSE")
+            plt.loglog(steps, force_rmse, label="Force RMSE")
             plt.ylabel("Error [eV, eV/Å]")
         else:
             plt.ylabel("Error [eV]")
-        plt.semilogy(steps, loss, label="Loss function")
+        plt.loglog(steps, loss, label="Loss function")
 
         plt.title("Energy and force Root Mean Square Error")
         plt.legend()

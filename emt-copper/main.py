@@ -32,7 +32,10 @@ if __name__ == "__main__":
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(
-        convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff, hidden_layers=hidden_layers,
+        convergence=convergence,
+        force_coefficient=force_coefficient,
+        cutoff=cutoff,
+        hidden_layers=hidden_layers,
     )
     trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 

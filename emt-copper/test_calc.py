@@ -1,4 +1,5 @@
 import sys
+import time
 from asap3 import EMT
 from amp import Amp
 from amp.analysis import calculate_error
@@ -16,9 +17,7 @@ if __name__ == "__main__":
     temp = 300
     timestep = 1.0
     n_test = int(5e3)
-    log = "log.txt"
     save_interval = 10
-    log = "log.txt"
     legend = ["EMT", "AMP"]
 
     energy_log = "energy-trained-log.txt"
@@ -48,10 +47,10 @@ if __name__ == "__main__":
         save_interval,
         timestep=timestep,
         convert=True,
-        log=log,
     )
 
     anl = Analyzer()
+    
     r, rdf = anl.calculate_rdf(test_traj, r_max=6.0)
     r_amp, rdf_amp = anl.calculate_rdf(amp_test_traj, r_max=6.0)
     rdf_plot = system + "_" + "rdf.png"
@@ -75,11 +74,11 @@ if __name__ == "__main__":
     plter.plot_msd(msd_plot, legend, steps, msd, amp_msd)
 
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        "calcs/force-trained.amp", test_traj
+        "calcs/force-trained.amp", test_traj, label="amp", dblabel="amp"
     )
     plter.plot_amp_error(
-        "energy_error.png",
-        "force_error.png",
+        system + "_" + "energy_error.png",
+        system + "_" + "force_error.png",
         energy_rmse,
         force_rmse,
         energy_exact,
@@ -87,3 +86,12 @@ if __name__ == "__main__":
         force_exact,
         force_diff,
     )
+
+    test_sizes = [(1, 1, 1), (2, 2, 2), (3, 3, 3)]
+    for size in test_sizes:
+        calc = Amp.load("calcs/force-trained.amp")
+        test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
+        start = time.time()
+        test_atoms.get_forces()
+        end = time.time()
+        print(end - start)

@@ -33,7 +33,10 @@ if __name__ == "__main__":
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(
-        convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff, hidden_layers=hidden_layers,
+        convergence=convergence,
+        force_coefficient=force_coefficient,
+        cutoff=cutoff,
+        hidden_layers=hidden_layers,
     )
     trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
@@ -44,10 +47,15 @@ if __name__ == "__main__":
     train_traj = "training.traj"
     train_force_traj = "training_force.traj"
     steps, train_traj = trjbd.integrate_atoms(
-        train_atoms, train_traj, n_train, save_interval, timestep=timestep,
+        train_atoms, train_traj, n_train, save_interval, timestep=timestep
     )
     steps, train_force_traj = trjbd.integrate_atoms(
-        train_atoms, train_force_traj, n_train_force, save_interval, steps=steps, timestep=timestep,
+        train_atoms,
+        train_force_traj,
+        n_train_force,
+        save_interval,
+        steps=steps,
+        timestep=timestep,
     )
 
     label = "energy-trained"

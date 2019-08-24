@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     test_traj = "test.traj"
     steps, test_traj = trjbd.integrate_atoms(
-        test_atoms, test_traj, n_test, save_interval, timestep=timestep, convert=True,
+        test_atoms, test_traj, n_test, save_interval, timestep=timestep, convert=True
     )
 
     amp_test_traj = "amp_test.traj"

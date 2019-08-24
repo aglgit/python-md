@@ -72,11 +72,11 @@ if __name__ == "__main__":
     plter.plot_msd(msd_plot, legend, steps, msd, amp_msd)
 
     energy_rmse, force_rmse, energy_exact, energy_diff, force_exact, force_diff = calculate_error(
-        "calcs/force-trained.amp", test_traj
+        "calcs/force-trained.amp", test_traj, label="amp", dblabel="amp"
     )
     plter.plot_amp_error(
-        "energy_error.png",
-        "force_error.png",
+        system + "_" + "energy_error.png",
+        system + "_" + "force_error.png",
         energy_rmse,
         force_rmse,
         energy_exact,
