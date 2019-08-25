@@ -1,5 +1,6 @@
 import sys
 import time
+import numpy as np
 from asap3 import EMT
 from amp import Amp
 from amp.analysis import calculate_error
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     )
 
     anl = Analyzer()
-    
+
     r, rdf = anl.calculate_rdf(test_traj, r_max=6.0)
     r_amp, rdf_amp = anl.calculate_rdf(amp_test_traj, r_max=6.0)
     rdf_plot = system + "_" + "rdf.png"
@@ -87,11 +88,30 @@ if __name__ == "__main__":
         force_diff,
     )
 
-    test_sizes = [(1, 1, 1), (2, 2, 2), (3, 3, 3)]
-    for size in test_sizes:
+    test_sizes = [
+        (1, 1, 1),
+        (1, 1, 2),
+        (1, 2, 2),
+        (2, 2, 2),
+        (2, 2, 3),
+        (2, 3, 3),
+        (3, 3, 3),
+        (3, 3, 4),
+        (3, 4, 4),
+        (4, 4, 4),
+    ]
+    num_atoms = np.zeros(len(test_sizes))
+    times = np.zeros(len(test_sizes))
+    for i, size in enumerate(test_sizes):
+        n = 4
+        for dim in size:
+            n *= dim
+        num_atoms[i] = n
         calc = Amp.load("calcs/force-trained.amp")
         test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
         start = time.time()
         test_atoms.get_forces()
         end = time.time()
-        print(end - start)
+        times[i] = end - start
+
+    plter.plot_scaling(system + "_" + "scaling.png", num_atoms, times)

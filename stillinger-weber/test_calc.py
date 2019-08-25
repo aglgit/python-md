@@ -1,4 +1,6 @@
 import sys
+import time
+import numpy as np
 from asap3 import OpenKIMcalculator
 from amp import Amp
 from amp.analysis import calculate_error
@@ -84,3 +86,31 @@ if __name__ == "__main__":
         force_exact,
         force_diff,
     )
+
+    test_sizes = [
+        (1, 1, 1),
+        (1, 1, 2),
+        (1, 2, 2),
+        (2, 2, 2),
+        (2, 2, 3),
+        (2, 3, 3),
+        (3, 3, 3),
+        (3, 3, 4),
+        (3, 4, 4),
+        (4, 4, 4),
+    ]
+    num_atoms = np.zeros(len(test_sizes))
+    times = np.zeros(len(test_sizes))
+    for i, size in enumerate(test_sizes):
+        n = 8
+        for dim in size:
+            n *= dim
+        num_atoms[i] = n
+        calc = Amp.load("calcs/force-trained.amp")
+        test_atoms = trjbd.build_atoms(system, size, temp, calc, seed=0)
+        start = time.time()
+        test_atoms.get_forces()
+        end = time.time()
+        times[i] = end - start
+
+    plter.plot_scaling(system + "_" + "scaling.png", num_atoms, times)

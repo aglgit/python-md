@@ -123,6 +123,16 @@ class Plotter:
         plt.savefig(force_plot_file)
         plt.clf()
 
+    def plot_scaling(self, plot_file, num_atoms, times):
+        plot_file = os.path.join(self.plot_dir, plot_file)
+
+        plt.plot(num_atoms, times)
+        plt.title("Time scaling as a function of system size")
+        plt.xlabel("Number of atoms")
+        plt.ylabel("Time [s]")
+        plt.savefig(plot_file)
+        plt.clf()
+
     def plot_symmetry_functions(
         self,
         rad_plot_file,
