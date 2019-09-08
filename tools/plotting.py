@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from amp.analysis import read_trainlog
+from symmetry_functions import *
 
 
 class Plotter:
@@ -148,14 +149,14 @@ class Plotter:
         ang_plot_file = os.path.join(self.plot_dir, ang_plot_file)
 
         if cutoff is None:
-            cut = self.cosine
+            cut = cosine
             r_cut = 6.0
         else:
             if cutoff.__class__.__name__ == "Cosine":
-                cut = self.cosine
+                cut = cosine
                 r_cut = cutoff.Rc
             elif cutoff.__class__.__name__ == "Polynomial":
-                cut = lambda rij, r_cut: self.polynomial(rij, r_cut, cutoff.gamma)
+                cut = lambda rij, r_cut: polynomial(rij, r_cut, cutoff.gamma)
                 r_cut = cutoff.Rc
             else:
                 print("Cutoff {} not recognized".format(cutoff))
@@ -179,14 +180,14 @@ class Plotter:
             if symm_func["type"] == "G2":
                 eta = symm_func["eta"]
                 center = symm_func["center"]
-                val = self.G2(eta, center, rij, cut, r_cut)
+                val = G2(eta, center, rij, cut, r_cut)
                 plt.figure(1)
                 plt.plot(rij, val, label="eta={}, center={}".format(eta, center))
             elif symm_func["type"] in ["G4", "G5"]:
                 eta = symm_func["eta"]
                 gamma = symm_func["gamma"]
                 zeta = symm_func["zeta"]
-                val = self.G4(eta, gamma, zeta, theta)
+                val = G4(eta, gamma, zeta, theta)
                 plt.figure(2)
                 plt.plot(
                     theta,
@@ -203,27 +204,3 @@ class Plotter:
         plt.legend()
         plt.savefig(ang_plot_file, dpi=500)
         plt.clf()
-
-    def cosine(self, rij, r_cut):
-        term = 0.5 * (1 + np.cos(np.pi * rij / r_cut))
-
-        return term
-
-    def polynomial(self, rij, r_cut, gamma=4.0):
-        term1 = 1 + gamma * (rij / r_cut) ** (gamma + 1)
-        term2 = (gamma + 1) * (rij / r_cut) ** gamma
-
-        return term1 - term2
-
-    def G2(self, eta, center, rij, cutoff, r_cut):
-        term1 = np.exp(-eta * (rij - center) ** 2 / r_cut ** 2)
-        term2 = cutoff(rij, r_cut)
-
-        return term1 * term2
-
-    def G4(self, eta, gamma, zeta, theta_ijk):
-        term1 = 2 ** (1 - zeta)
-        term2 = (1 + gamma * np.cos(theta_ijk)) ** zeta
-        term3 = np.exp(-eta)
-
-        return term1 * term2 * term3
