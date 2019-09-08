@@ -17,12 +17,14 @@ if __name__ == "__main__":
     n_train = int(8e4)
     n_test = int(2e4)
     save_interval = 100
+    train_traj = "training.traj"
+    test_traj = "test.traj"
 
     max_steps = int(2e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 6
+    num_radial_etas = 8
     num_angular_etas = 10
     num_zetas = 1
     angular_type = "G4"
@@ -37,8 +39,6 @@ if __name__ == "__main__":
     calc = EMT()
     test_atoms = trjbd.build_atoms(system, size, temp, calc)
 
-    train_traj = "training.traj"
-    test_traj = "test.traj"
     steps, train_traj = trjbd.integrate_atoms(
         train_atoms, train_traj, n_train, save_interval
     )
