@@ -1,24 +1,34 @@
 import sys
 from asap3 import EMT
 from amp.utilities import Annealer
+from amp.descriptor.cutoffs import Cosine, Polynomial
 
 sys.path.insert(1, "../tools")
 
-from parameter_search import ParameterSearch
 from create_trajectory import TrajectoryBuilder
 from training import Trainer
 
 
 if __name__ == "__main__":
-    pms = ParameterSearch()
-    trn = pms.create_trainer()
-
     system = "copper"
     elements = ["Cu"]
     size = (2, 2, 2)
     temp = 500
     n_test = int(2e4)
     save_interval = 100
+
+    max_steps = int(2e3)
+    convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
+    force_coefficient = None
+    cutoff = Polynomial(6.0, gamma=5.0)
+    num_radial_etas = 6
+    num_angular_etas = 10
+    num_zetas = 1
+    angular_type = "G4"
+    trn = Trainer(
+        convergence=convergence, force_coefficient=force_coefficient, cutoff=cutoff
+    )
+    trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
     trjbd = TrajectoryBuilder()
     n_images = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000]

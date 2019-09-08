@@ -18,16 +18,16 @@ if __name__ == "__main__":
     elements = ["Cu"]
     size = (2, 2, 2)
     temp = 1000
-    n_train = int(8e5)
-    n_train_force = int(2e5)
+    n_train = int(2e6)
+    n_train_force = int(1e5)
     save_interval = 100
 
     max_steps = int(4e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     hidden_layers = [10]
-    cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 6
+    cutoff = Polynomial(5.0, gamma=5.0)
+    num_radial_etas = 4
     num_angular_etas = 8
     num_zetas = 1
     angular_type = "G4"
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
-        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1, overfit=0.001,
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1
     )
     calc.model.lossfunction = loss_function
     amp_name = trn.train_calc(calc, train_force_traj)

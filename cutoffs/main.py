@@ -1,24 +1,52 @@
 import sys
+from asap3 import EMT
 from amp.utilities import Annealer
 from amp.descriptor.cutoffs import Cosine, Polynomial
 
 sys.path.insert(1, "../tools")
 
-from parameter_search import ParameterSearch
+from create_trajectory import TrajectoryBuilder
 from training import Trainer
 
 
 if __name__ == "__main__":
-    pms = ParameterSearch()
-    pms.create_train_test()
-    trn = pms.create_trainer()
+    system = "copper"
+    elements = ["Cu"]
+    size = (2, 2, 2)
+    temp = 500
+    n_train = int(8e4)
+    n_test = int(2e4)
+    save_interval = 100
+
+    max_steps = int(2e3)
+    convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
+    force_coefficient = None
+    num_radial_etas = 6
+    num_angular_etas = 10
+    num_zetas = 1
+    angular_type = "G4"
+    trn = Trainer(convergence=convergence, force_coefficient=force_coefficient)
+
+    trjbd = TrajectoryBuilder()
+    calc = EMT()
+    train_atoms = trjbd.build_atoms(system, size, temp, calc)
+    calc = EMT()
+    test_atoms = trjbd.build_atoms(system, size, temp, calc)
+
+    train_traj = "training.traj"
+    test_traj = "test.traj"
+    steps, train_traj = trjbd.integrate_atoms(
+        train_atoms, train_traj, n_train, save_interval
+    )
+    steps, test_traj = trjbd.integrate_atoms(
+        test_atoms, test_traj, n_test, save_interval
+    )
 
     rcs = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
-    gamma = 5.0
     cutoffs = []
     for rc in rcs:
         cutoffs.append(Cosine(rc))
-        cutoffs.append(Polynomial(rc, gamma=gamma))
+        cutoffs.append(Polynomial(rc, gamma=5.0))
 
     calcs = {}
     for cutoff in cutoffs:

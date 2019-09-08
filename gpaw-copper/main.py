@@ -1,6 +1,6 @@
 import os
 import sys
-from asap3 import OpenKIMcalculator
+from gpaw import GPAW
 from amp import Amp
 from amp.utilities import Annealer
 from amp.descriptor.cutoffs import Cosine, Polynomial
@@ -18,10 +18,10 @@ if __name__ == "__main__":
     elements = ["Si"]
     size = (2, 2, 2)
     temp = 1000
-    n_train = int(2e6)
-    n_train_force = int(1e5)
-    save_interval = 100
-    timestep = 5.0
+    n_train = int(5e3)
+    n_train_force = int(1e3)
+    save_interval = 5
+    timestep = 0.5
 
     max_steps = int(4e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     trn.create_Gs(elements, num_radial_etas, num_angular_etas, num_zetas, angular_type)
 
     trjbd = TrajectoryBuilder()
-    calc = OpenKIMcalculator("SW_StillingerWeber_1985_Si__MO_405512056662_005")
+    calc = GPAW(mode="pw", symmetry={"point_group": False})
     train_atoms = trjbd.build_atoms(system, size, temp, calc)
 
     train_traj = "training.traj"

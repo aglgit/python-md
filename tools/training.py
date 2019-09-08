@@ -16,7 +16,6 @@ class Trainer:
         convergence=None,
         energy_coefficient=1.0,
         force_coefficient=None,
-        overfit=1e-3,
         hidden_layers=(10, 10),
         activation="tanh",
         cutoff=Cosine(6.0),
@@ -34,7 +33,6 @@ class Trainer:
 
         self.energy_coefficient = energy_coefficient
         self.force_coefficient = force_coefficient
-        self.overfit = overfit
         self.hidden_layers = hidden_layers
         self.activation = activation
         self.cutoff = cutoff
@@ -81,7 +79,6 @@ class Trainer:
                 convergence=self.convergence,
                 energy_coefficient=self.energy_coefficient,
                 force_coefficient=self.force_coefficient,
-                overfit=self.overfit,
             )
             model = NeuralNetwork(
                 hiddenlayers=self.hidden_layers,

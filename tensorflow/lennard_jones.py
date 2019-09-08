@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense
@@ -41,8 +40,6 @@ def lennard_jones_data():
 
 
 def plot_network_and_derivative(x_test, y_test, model):
-    sns.set()
-
     lj_derivative = lambda r: -24 * (2 * r ** (-13) - r ** (-7))
 
     x_plot = x_test.copy()
