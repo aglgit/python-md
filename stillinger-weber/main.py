@@ -28,15 +28,17 @@ if __name__ == "__main__":
     max_steps = int(4e3)
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
-    hidden_layers = [10]
-    cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 8
-    num_angular_etas = 12
+    overfit = 1e-7
+    hidden_layers = [10, 10]
+    cutoff = Polynomial(5.0, gamma=5.0)
+    num_radial_etas = 7
+    num_angular_etas = 11
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(
         convergence=convergence,
         force_coefficient=force_coefficient,
+        overfit=overfit,
         cutoff=cutoff,
         hidden_layers=hidden_layers,
     )
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     calc = Amp.load(amp_name, label=label, dblabel=dblabel)
     convergence = {"energy_rmse": 1e-16, "force_rmse": 1e-16, "max_steps": max_steps}
     loss_function = LossFunction(
-        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1, overfit=1e-3,
+        convergence=convergence, energy_coefficient=1.0, force_coefficient=0.1, overfit=overfit,
     )
     calc.model.lossfunction = loss_function
     amp_name = trn.train_calc(calc, train_force_traj)

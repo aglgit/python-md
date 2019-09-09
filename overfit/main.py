@@ -24,7 +24,7 @@ if __name__ == "__main__":
     convergence = {"energy_rmse": 1e-16, "force_rmse": None, "max_steps": max_steps}
     force_coefficient = None
     cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 8
+    num_radial_etas = 6
     num_angular_etas = 10
     num_zetas = 1
     angular_type = "G4"
@@ -46,12 +46,12 @@ if __name__ == "__main__":
         test_atoms, test_traj, n_test, save_interval
     )
 
-    overfits = [10**(-i) for i in range(7)]
+    overfits = [10**(-i) for i in range(10)]
     dblabel = "amp-train"
     calcs = {}
     for of in overfit:
         trn.overfit = of
-        label = "o{}".format(of)
+        label = "o{:.2e}".format(of)
         calc = trn.create_calc(label=label, dblabel=dblabel)
         ann = Annealer(
             calc=calc,
@@ -64,6 +64,6 @@ if __name__ == "__main__":
         amp_name = trn.train_calc(calc, train_traj)
         calcs[label] = amp_name
 
-    columns = ["Activation/Hidden layers", "Energy RMSE", "Force RMSE"]
+    columns = ["Regularization", "Energy RMSE", "Force RMSE"]
     dblabel = "amp-test"
     trn.test_calculators(calcs, test_traj, columns, dblabel=dblabel)
