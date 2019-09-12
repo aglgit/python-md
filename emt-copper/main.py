@@ -29,9 +29,9 @@ if __name__ == "__main__":
     force_coefficient = None
     overfit = 1e-7
     hidden_layers = [10, 10]
-    cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 8
-    num_angular_etas = 6
+    cutoff = Polynomial(5.0, gamma=5.0)
+    num_radial_etas = 7
+    num_angular_etas = 8
     num_zetas = 1
     angular_type = "G4"
     trn = Trainer(

@@ -87,6 +87,9 @@ class Trainer:
                 hiddenlayers=self.hidden_layers,
                 activation=self.activation,
                 lossfunction=loss_function,
+                weights=None,
+                scalings=None,
+                prescale=True,
             )
             descriptor = Gaussian(cutoff=self.cutoff, Gs=self.Gs, fortran=True)
             calc = Amp(
