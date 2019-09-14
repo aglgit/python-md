@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -41,7 +42,9 @@ def lennard_jones_data():
 
 
 def plot_network_and_derivative(x_test, y_test, model):
-    sns.set()
+    plot_dir = "plots"
+    if not os.path.exists(plot_dir):
+        os.mkdir(plot_dir)
     lj_derivative = lambda r: -24 * (2 * r ** (-13) - r ** (-7))
 
     x_plot = x_test.copy()
@@ -68,14 +71,14 @@ def plot_network_and_derivative(x_test, y_test, model):
     plt.xlabel("Radial distance r")
     plt.ylabel("Potential energy V(r)")
     plt.legend(["Lennard-Jones", "Neural Network"])
-    plt.savefig("potential_comparison.png")
+    plt.savefig(os.path.join(plot_dir, "potential_comparison.png"))
     plt.clf()
 
     plt.plot(x_plot, abs(y_model - y_plot))
     plt.title("Absolute error of neural network")
     plt.xlabel("Radial distance r")
     plt.ylabel("Absolute error")
-    plt.savefig("potential_absolute_error.png")
+    plt.savefig(os.path.join(plot_dir, "potential_absolute_error.png"))
     plt.clf()
 
     plt.plot(x_plot, dy_plot)
@@ -84,14 +87,14 @@ def plot_network_and_derivative(x_test, y_test, model):
     plt.xlabel("Radial distance r")
     plt.ylabel("Force dV(r)")
     plt.legend(["Lennard-Jones", "Neural Network"])
-    plt.savefig("force_comparison.png")
+    plt.savefig(os.path.join(plot_dir, "force_comparison.png"))
     plt.clf()
 
     plt.plot(x_plot, abs(dy_model - dy_plot))
     plt.title("Absolute error of neural network force")
     plt.xlabel("Radial distance r")
     plt.ylabel("Absolute error")
-    plt.savefig("force_absolute_error.png")
+    plt.savefig(os.path.join(plot_dir, "force_absolute_error.png"))
     plt.clf()
 
     energy_rmse = np.sqrt(np.sum((y_model - y_plot) ** 2))
@@ -146,4 +149,5 @@ for epoch in range(epochs):
     template = "Epoch {}, Loss: {}, Test Loss: {}"
     print(template.format(epoch + 1, train_loss.result(), test_loss.result()))
 
+sns.set()
 plot_network_and_derivative(x_test, y_test, model)

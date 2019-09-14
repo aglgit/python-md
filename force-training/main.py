@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     max_steps = int(2e3)
     cutoff = Polynomial(6.0, gamma=5.0)
-    num_radial_etas = 8
+    num_radial_etas = 6
     num_angular_etas = 10
     num_zetas = 1
     angular_type = "G4"

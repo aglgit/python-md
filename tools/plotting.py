@@ -196,11 +196,15 @@ class Plotter:
 
         plt.rc("legend", fontsize=5)
         plt.figure(1)
-        plt.legend()
+        plt.title("Radial symmetry functions")
+        plt.xlabel("$R / R_c$")
+        plt.ylabel("Symmetry function values")
         plt.savefig(rad_plot_file, dpi=500)
         plt.clf()
         plt.figure(2)
-        plt.legend()
+        plt.title("Angular symmetry functions")
+        plt.xlabel("Theta [radians]")
+        plt.ylabel("Symmetry function values")
         plt.savefig(ang_plot_file, dpi=500)
         plt.clf()
 
