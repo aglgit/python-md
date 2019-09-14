@@ -19,7 +19,7 @@ if __name__ == "__main__":
     size = (2, 2, 2)
     temp = 1000
     n_train = int(8e5)
-    n_train_force = int(2e5)
+    n_train_force = int(1e5)
     save_interval = 100
     timestep = 5.0
     train_traj = "training.traj"

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     )
 
     num_radial_etas = [4, 5, 6, 7, 8, 9, 10, 10]
-    num_angular_etas = [n + 2 for n in num_radial_etas]
+    num_angular_etas = [n + 4 for n in num_radial_etas]
     num_zetas = [1, 1, 1, 1, 1, 1, 1, 2]
     gammas = [1.0, -1.0]
     symm_funcs = {"Default": None}
