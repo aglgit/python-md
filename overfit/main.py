@@ -49,7 +49,7 @@ if __name__ == "__main__":
     overfits = [10**(-i) for i in range(10)]
     dblabel = "amp-train"
     calcs = {}
-    for of in overfit:
+    for of in overfits:
         trn.overfit = of
         label = "o{:.2e}".format(of)
         calc = trn.create_calc(label=label, dblabel=dblabel)
