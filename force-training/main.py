@@ -16,8 +16,8 @@ if __name__ == "__main__":
     elements = ["Cu"]
     size = (3, 3, 3)
     temp = 500
-    n_train = int(5e4)
-    n_test = int(1e4)
+    n_train = int(2e4)
+    n_test = int(8e3)
     save_interval = 100
     train_traj = "training.traj"
     test_traj = "test.traj"
