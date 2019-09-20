@@ -48,7 +48,7 @@ class Plotter:
         plt.title("Radial distribution function")
         plt.legend(legend)
         plt.xlabel("Radial distance [Å]")
-        plt.ylabel("RDF")
+        plt.ylabel("Radial distribution function")
         plt.savefig(plot_file)
         plt.clf()
 
@@ -61,7 +61,7 @@ class Plotter:
         plt.title("Mean Squared Displacement")
         plt.legend(legend)
         plt.xlabel("Steps")
-        plt.ylabel("MSD [Å]")
+        plt.ylabel("Mean Squared Displacement [Å]")
         plt.savefig(plot_file)
         plt.clf()
 
@@ -109,16 +109,16 @@ class Plotter:
 
         plt.scatter(energy_exact, energy_diff)
         plt.axhline(y=energy_rmse, linestyle="--")
-        plt.title("Scatterplot of energy error, energy RMSE={:.2E}".format(energy_rmse))
-        plt.xlabel("Exact energy")
+        plt.title("Scatterplot of energy error, energy RMSE={:.2E} [eV]".format(energy_rmse))
+        plt.xlabel("Exact energy [eV]")
         plt.ylabel("abs(Exact energy - AMP energy) [eV]")
         plt.savefig(energy_plot_file)
         plt.clf()
 
         plt.scatter(force_exact, force_diff)
         plt.axhline(y=force_rmse, linestyle="--")
-        plt.title("Scatterplot of force error, force RMSE={:.2E}".format(force_rmse))
-        plt.xlabel("Exact force")
+        plt.title("Scatterplot of force error, force RMSE={:.2E} [eV]".format(force_rmse))
+        plt.xlabel("Exact force [eV]")
         plt.ylabel("abs(Exact force - AMP force) [eV/Å]")
         plt.savefig(force_plot_file)
         plt.clf()
